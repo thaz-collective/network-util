@@ -1,12 +1,14 @@
+allowBuilds:
+  msw: set this to true or false
 blockExoticSubdeps: true
 
 catalog:
+  '@standard-schema/spec': 1.0.0
   '@tanstack/react-query': 5.101.4
   '@thaz/oxfmt-config': 1.0.0-rc.3
   '@thaz/oxlint-config': 1.0.0-rc.2
   '@thaz/temporal-util': 1.0.0-rc.3
   '@thaz/typescript-config': 1.0.0-rc.2
-  '@ts-rest/core': 3.53.0-rc.1
   '@types/node': 24.13.3
   '@types/react': 19.2.18
   '@vitejs/plugin-react': 6.0.5
@@ -14,6 +16,7 @@ catalog:
   '@vitest/browser-playwright': 4.1.10
   '@vitest/ui': 4.1.10
   jsdom: 30.0.1
+  msw: 2.14.6
   playwright: 1.62.1
   react: 19.2.8
   spin-delay: 2.0.1

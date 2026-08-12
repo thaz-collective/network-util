@@ -12,7 +12,7 @@ Establish the flat contract builder and its type-level inference, validated in i
 ### `src/fetch/dsl.ts`
 
 ```ts
-import type { StandardSchemaV1 } from '@standard-schema/spec';
+import type { StandardSchemaV1 } from './standard-schema';
 
 export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
 
@@ -51,7 +51,7 @@ introspection here.
 ### `src/fetch/infer-types.ts`
 
 ```ts
-import type { StandardSchemaV1 } from '@standard-schema/spec';
+import type { StandardSchemaV1 } from './standard-schema';
 import type { RouteDef } from './dsl';
 
 export type InferPathParams<T extends RouteDef> = T['pathParams'] extends StandardSchemaV1
@@ -71,9 +71,9 @@ export type InferBody<T extends RouteDef> = T['body'] extends StandardSchemaV1
   : undefined;
 
 export type InferRequest<T extends RouteDef> = {
-  [K in 'pathParams' | 'query' | 'headers' | 'body' as T[K] extends StandardSchemaV1
-    ? K
-    : never]: K extends 'pathParams'
+  [
+    K in 'pathParams' | 'query' | 'headers' | 'body' as T[K] extends StandardSchemaV1 ? K : never
+  ]: K extends 'pathParams'
     ? InferPathParams<T>
     : K extends 'query'
       ? InferQuery<T>

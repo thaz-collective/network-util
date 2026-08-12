@@ -36,16 +36,17 @@ export function createFetchClient<T extends Record<string, RouteDef>>(
         ? await validateField(route, 'pathParams', route.pathParams, args.pathParams)
         : undefined;
       const query = route.query ? await validateField(route, 'query', route.query, args.query) : undefined;
-      const headers = route.headers
-        ? await validateField(route, 'headers', route.headers, args.headers)
-        : undefined;
+      const headers = route.headers ? await validateField(route, 'headers', route.headers, args.headers) : undefined;
       const body = route.body ? await validateField(route, 'body', route.body, args.body) : undefined;
 
-      const url = buildUrl(options.baseUrl, route.path, pathParams as Record<string, unknown>, query as Record<string, unknown>);
-
-      const mergedHeaders = new Headers(
-        typeof options.headers === 'function' ? options.headers() : options.headers,
+      const url = buildUrl(
+        options.baseUrl,
+        route.path,
+        pathParams as Record<string, unknown>,
+        query as Record<string, unknown>,
       );
+
+      const mergedHeaders = new Headers(typeof options.headers === 'function' ? options.headers() : options.headers);
       if (headers) {
         for (const [k, v] of Object.entries(headers)) mergedHeaders.set(k, String(v));
       }

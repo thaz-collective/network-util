@@ -37,6 +37,10 @@
       "types": "./dist/error.d.mts",
       "import": "./dist/error.mjs"
     },
+    "./fetch": {
+      "types": "./dist/fetch.d.mts",
+      "import": "./dist/fetch.mjs"
+    },
     "./react-query": {
       "types": "./dist/react-query.d.mts",
       "import": "./dist/react-query.mjs"
@@ -65,7 +69,6 @@
     "@thaz/oxlint-config": "catalog:",
     "@thaz/temporal-util": "catalog:",
     "@thaz/typescript-config": "catalog:",
-    "@ts-rest/core": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@vitejs/plugin-react": "catalog:",
@@ -73,6 +76,7 @@
     "@vitest/coverage-istanbul": "catalog:",
     "@vitest/ui": "catalog:",
     "jsdom": "catalog:",
+    "msw": "catalog:",
     "playwright": "catalog:",
     "react": "catalog:",
     "temporal-polyfill": "catalog:",
@@ -87,7 +91,6 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.101.4",
     "@thaz/temporal-util": "^1.0.0-rc.2",
-    "@ts-rest/core": "^3.52.1",
     "react": "^19.2.8",
     "temporal-polyfill": "^1.0.3",
     "valibot": "^1.4.2"
@@ -100,5 +103,10 @@
   "engines": {
     "node": ">=24"
   },
-  "packageManager": "pnpm@11.21.0"
+  "packageManager": "pnpm@11.21.0",
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  }
 }

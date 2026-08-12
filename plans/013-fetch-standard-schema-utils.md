@@ -13,7 +13,7 @@ responses.
 ### `src/fetch/standard-schema-utils.ts`
 
 ```ts
-import type { StandardSchemaV1 } from '@standard-schema/spec';
+import type { StandardSchemaV1 } from './standard-schema';
 
 export function isStandardSchema(value: unknown): value is StandardSchemaV1 {
   return (
@@ -28,7 +28,8 @@ export async function validateAgainstStandardSchema<T extends StandardSchemaV1>(
   schema: T,
   data: unknown,
 ): Promise<
-  { success: true; value: StandardSchemaV1.InferOutput<T> } | { success: false; issues: readonly StandardSchemaV1.Issue[] }
+  | { success: true; value: StandardSchemaV1.InferOutput<T> }
+  | { success: false; issues: readonly StandardSchemaV1.Issue[] }
 > {
   const result = await schema['~standard'].validate(data);
   if (result.issues) {

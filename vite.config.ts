@@ -47,6 +47,7 @@ export default defineConfig({
     entry: {
       index: './src/index.ts',
       error: './src/error/index.ts',
+      fetch: './src/fetch/index.ts',
       'react-query': './src/react-query/index.ts',
     },
     exports: {
@@ -58,6 +59,10 @@ export default defineConfig({
         './error': {
           types: './dist/error.d.mts',
           import: './dist/error.mjs',
+        },
+        './fetch': {
+          types: './dist/fetch.d.mts',
+          import: './dist/fetch.mjs',
         },
         './react-query': {
           types: './dist/react-query.d.mts',
@@ -120,6 +125,7 @@ export default defineConfig({
       typeAware: true,
       typeCheck: true,
     },
+    ignorePatterns: ['public/mockServiceWorker.js'],
     rules: {
       ...libraryCodeConfigRules.rules,
       'import/no-default-export': 'off',

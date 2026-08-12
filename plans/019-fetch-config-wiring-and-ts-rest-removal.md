@@ -46,7 +46,7 @@ Add to `pack.exports.customExports`:
 2. `vp check --fix` — lint/format/typecheck clean across the whole package.
 3. `vp run test --browser.headless` — all suites (node, browser-chromium, browser-firefox, types)
    pass; coverage thresholds (80% branches/functions/lines/statements) hold repo-wide including
-   all new `src/fetch/**` and `src/error/standard-schema-validation-error.ts` files.
+   all new `src/fetch/**` and `../src/error/network-standard-schema-validation-error.ts` files.
 4. `vp run build` — confirm the `./fetch` subpath builds, and inspect the regenerated
    `package.json` `exports` field to confirm `"./fetch"` now appears alongside `.`, `./error`,
    `./react-query`.

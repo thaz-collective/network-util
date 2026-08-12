@@ -29,11 +29,11 @@ and this repo's existing module/testing/build conventions (`src/valibot`, `src/e
 
 - **Test mocking**: `msw` (new devDependency) — one HTTP-mocking strategy shared by the node and
   Playwright-browser vitest projects.
-- **Error placement**: `StandardSchemaValidationError` (base, issues-array error) lives in
+- **Error placement**: `NetworkStandardSchemaValidationError` (base, issues-array error) lives in
   `src/error/`. The new `/fetch` module does **not** reuse any existing higher-level error class
   (`NetworkError`, `NetworkWithMessageListError`, `checkResponseMessageForError`,
   `refineNetworkError`) — `/fetch` defines its own error subtypes, extending only the shared
-  `StandardSchemaValidationError` base.
+  `NetworkStandardSchemaValidationError` base.
 - **Throw behavior**: every client call always throws on failure (no `{success, error}` result
   object). Different failure modes throw **different, distinct error subtypes** so callers can
   `instanceof`-discriminate.
@@ -44,7 +44,7 @@ and this repo's existing module/testing/build conventions (`src/valibot`, `src/e
 
 ```ts
 // src/fetch/dsl.ts
-import type { StandardSchemaV1 } from '@standard-schema/spec';
+import type { StandardSchemaV1 } from './standard-schema';
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
 
@@ -67,7 +67,7 @@ interface RouteDef<
 export function defineContract<T extends Record<string, RouteDef>>(routes: T): T;
 ```
 
-`pathParams`/`query`/`headers`/`body` are optional *keys*, but whenever present the value's type
+`pathParams`/`query`/`headers`/`body` are optional _keys_, but whenever present the value's type
 is constrained to `StandardSchemaV1` — nothing unvalidated can be assigned. `defineContract` is a
 generic identity function purely to anchor inference (no chained builder calls) — this is the
 "flat, one top-level object" builder.
@@ -82,17 +82,17 @@ export function createFetchClient<T extends Record<string, RouteDef>>(
 
 ## `src/fetch/` file breakdown
 
-| File | Purpose | Task |
-|---|---|---|
-| `dsl.ts` | `defineContract`, `RouteDef`, `Method`, runtime path/pathParams sanity check | 012 |
-| `infer-types.ts` | `InferRequest`, `InferResponse`, per-field infer helpers | 012 |
-| `standard-schema-utils.ts` | `isStandardSchema`, `validateAgainstStandardSchema` | 013 |
-| `url.ts` | `buildUrl(path, pathParams, query)` | 014 |
-| `errors.ts` | `RequestValidationError`, `ResponseValidationError`, `UnexpectedStatusError` | 016 |
-| `client.ts` | `createFetchClient` | 017 |
-| `index.ts` | barrel (`export * from './x'`) | 017 |
+| File                       | Purpose                                                                      | Task |
+| -------------------------- | ---------------------------------------------------------------------------- | ---- |
+| `dsl.ts`                   | `defineContract`, `RouteDef`, `Method`, runtime path/pathParams sanity check | 012  |
+| `infer-types.ts`           | `InferRequest`, `InferResponse`, per-field infer helpers                     | 012  |
+| `standard-schema-utils.ts` | `isStandardSchema`, `validateAgainstStandardSchema`                          | 013  |
+| `url.ts`                   | `buildUrl(path, pathParams, query)`                                          | 014  |
+| `errors.ts`                | `RequestValidationError`, `ResponseValidationError`, `UnexpectedStatusError` | 016  |
+| `client.ts`                | `createFetchClient`                                                          | 017  |
+| `index.ts`                 | barrel (`export * from './x'`)                                               | 017  |
 
-Plus one addition to `src/error/`: `standard-schema-validation-error.ts` (task 015).
+Plus one addition to `src/error/`: `network-standard-schema-validation-error.ts` (task 015).
 
 ## Task index
 

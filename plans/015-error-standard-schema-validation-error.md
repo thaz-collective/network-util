@@ -1,4 +1,4 @@
-# 015 — `StandardSchemaValidationError` in `src/error`
+# 015 — `NetworkStandardSchemaValidationError` in `src/error`
 
 See `011-fetch-overview.md` for full context.
 
@@ -11,10 +11,10 @@ prerequisite for task 016 (`src/fetch/errors.ts` extends this base) and for task
 
 ## Files to create/modify
 
-### `src/error/standard-schema-validation-error.ts` (new)
+### `../src/error/network-standard-schema-validation-error.ts` (new)
 
 ```ts
-import type { StandardSchemaV1 } from '@standard-schema/spec';
+import type { StandardSchemaV1 } from './standard-schema';
 
 /**
  * Raised when data fails standard-schema validation.
@@ -73,11 +73,11 @@ export * from './refine-network-response';
 
 ## Testing
 
-Add `test/error/standard-schema-validation-error.node.test.ts` covering: constructing with a
+Add `../test/error/network-standard-schema-validation-error.node.test.ts` covering: constructing with a
 sample `issues` array stores them on `.issues`, `message` is derived from the issues,
-`isStandardSchemaValidationError`/`instanceof` works. Update
+`isNetworkStandardSchemaValidationError`/`instanceof` works. Update
 `test/error/network-validation-error.node.test.ts` (if it exists — check first) to construct a
-`StandardSchemaValidationError` directly instead of relying on ts-rest, and confirm
+`NetworkStandardSchemaValidationError` directly instead of relying on ts-rest, and confirm
 `isNetworkValidationError` still returns `true`/`false` correctly.
 
 ## Verification

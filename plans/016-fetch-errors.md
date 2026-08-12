@@ -14,7 +14,7 @@ Define the distinct error subtypes the fetch client throws for each failure mode
 
 ```ts
 import { StandardSchemaValidationError } from '#src/error/standard-schema-validation-error';
-import type { StandardSchemaV1 } from '@standard-schema/spec';
+import type { StandardSchemaV1 } from './standard-schema';
 import type { Method } from './dsl';
 
 /**
@@ -47,10 +47,7 @@ export class ResponseValidationError extends StandardSchemaValidationError {
   readonly path: string;
   readonly status: number;
 
-  constructor(
-    issues: readonly StandardSchemaV1.Issue[],
-    context: { method: Method; path: string; status: number },
-  ) {
+  constructor(issues: readonly StandardSchemaV1.Issue[], context: { method: Method; path: string; status: number }) {
     super(issues);
     this.name = 'ResponseValidationError';
     this.method = context.method;
@@ -94,7 +91,7 @@ Using `describe`/`test`/`expect` from `vite-plus/test`:
 - Each error carries its context fields (`method`, `path`, `field`/`status`, `body` where
   applicable).
 - `isNetworkValidationError` (from `src/error`) returns `true` for a `RequestValidationError` and
-  a `ResponseValidationError` (since both extend `StandardSchemaValidationError`), confirming the
+  a `ResponseValidationError` (since both extend `NetworkStandardSchemaValidationError`), confirming the
   cross-module integration works as designed.
 
 ## Verification

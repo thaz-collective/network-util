@@ -1,0 +1,107 @@
+{
+  "name": "@thaz/network-util",
+  "version": "1.0.0-rc.1",
+  "description": "Network utilities for fetching and validating data in thaz collective applications",
+  "keywords": [
+    "fetch",
+    "network",
+    "react-query",
+    "temporal",
+    "utils",
+    "valibot"
+  ],
+  "homepage": "https://github.com/thaz-collective/network-util#readme",
+  "bugs": {
+    "url": "https://github.com/thaz-collective/network-util/issues"
+  },
+  "license": "MIT",
+  "author": "Tim Hazlett",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thaz-collective/network-util.git"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./valibot": {
+      "types": "./dist/valibot.d.mts",
+      "import": "./dist/valibot.mjs"
+    },
+    "./react-query": {
+      "types": "./dist/react-query.d.mts",
+      "import": "./dist/react-query.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest"
+  },
+  "scripts": {
+    "prepack": "vp run build",
+    "taze": "vpx taze@latest -Ilwr --maturity-period 3",
+    "taze:major": "vpx taze@latest major -Ilwr --maturity-period 3",
+    "taze:minor": "vpx taze@latest minor -Ilwr --maturity-period 3",
+    "taze:patch": "vpx taze@latest patch -Ilwr --maturity-period 3"
+  },
+  "dependencies": {
+    "spin-delay": "catalog:",
+    "use-deep-compare": "catalog:"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "catalog:",
+    "@thaz/oxfmt-config": "catalog:",
+    "@thaz/oxlint-config": "catalog:",
+    "@thaz/temporal-util": "catalog:",
+    "@thaz/typescript-config": "catalog:",
+    "@ts-rest/core": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
+    "@vitest/ui": "catalog:",
+    "jsdom": "catalog:",
+    "react": "catalog:",
+    "temporal-polyfill": "catalog:",
+    "typescript": "catalog:",
+    "valibot": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-externalize-deps": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.101.4",
+    "@thaz/temporal-util": "^1.0.0-rc.2",
+    "@ts-rest/core": "^3.52.1",
+    "react": "^19.2.8",
+    "temporal-polyfill": "^1.0.3",
+    "valibot": "^1.4.2"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-query": {
+      "optional": true
+    },
+    "@ts-rest/core": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "temporal-polyfill": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.20.0"
+}

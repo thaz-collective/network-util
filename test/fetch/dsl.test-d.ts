@@ -50,9 +50,20 @@ describe('fetch dsl type inference', () => {
 
   test('inferResponse is a discriminated union over declared statuses', () => {
     expectTypeOf<InferResponse<(typeof contract)['createPost']>>().toEqualTypeOf<
-      | { status: 201; body: { id: number; title: string }; headers: Headers }
-      | { status: 400; body: { message: string }; headers: Headers }
+      { status: 201; body: { id: number; title: string } } | { status: 400; body: { message: string } }
     >();
+  });
+
+  test('inferResponse narrows to a single status when given as the second type param', () => {
+    expectTypeOf<InferResponse<(typeof contract)['createPost'], 201>>().toEqualTypeOf<{
+      status: 201;
+      body: { id: number; title: string };
+    }>();
+
+    expectTypeOf<InferResponse<(typeof contract)['createPost'], 400>>().toEqualTypeOf<{
+      status: 400;
+      body: { message: string };
+    }>();
   });
 
   test('non-standard-schema values are rejected on schema fields', () => {

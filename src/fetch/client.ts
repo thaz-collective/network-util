@@ -82,7 +82,7 @@ export function createFetchClient<T extends Record<string, RouteDef>>(
         });
       }
 
-      return { status: res.status, body: result.value, headers: res.headers };
+      return { status: res.status, body: result.value };
     };
   }
 }

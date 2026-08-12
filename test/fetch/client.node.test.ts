@@ -48,14 +48,13 @@ describe('createFetchClient', () => {
     server.close();
   });
 
-  test('success path returns status, parsed body, and headers', async () => {
+  test('success path returns status and parsed body', async () => {
     const client = createFetchClient(contract, { baseUrl: 'https://api.example.com' });
 
     const result = await client.getPost({ pathParams: { id: '1' } });
 
     expect(result.status).toBe(200);
     expect(result.body).toStrictEqual({ id: 1, title: 'Hello world' });
-    expect(result.headers).toBeInstanceOf(Headers);
   });
 
   test('substitutes path params into the request URL', async () => {

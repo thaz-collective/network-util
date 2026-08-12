@@ -30,10 +30,12 @@ export type InferRequest<T extends RouteDef> = {
         : InferBody<T>;
 };
 
-export type InferResponse<T extends RouteDef> = {
-  [S in keyof T['responses'] & number]: {
-    status: S;
-    body: StandardSchemaV1.InferOutput<T['responses'][S]>;
-    headers: Headers;
+export type InferResponse<
+  T extends RouteDef,
+  S extends keyof T['responses'] & number = keyof T['responses'] & number,
+> = {
+  [K in S]: {
+    status: K;
+    body: StandardSchemaV1.InferOutput<T['responses'][K]>;
   };
-}[keyof T['responses'] & number];
+}[S];

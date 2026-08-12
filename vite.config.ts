@@ -45,7 +45,7 @@ export default defineConfig({
     },
     entry: {
       index: './src/index.ts',
-      valibot: './src/valibot/index.ts',
+      error: './src/error/index.ts',
       'react-query': './src/react-query/index.ts',
     },
     exports: {
@@ -54,9 +54,9 @@ export default defineConfig({
           types: './dist/index.d.mts',
           import: './dist/index.mjs',
         },
-        './valibot': {
-          types: './dist/valibot.d.mts',
-          import: './dist/valibot.mjs',
+        './error': {
+          types: './dist/error.d.mts',
+          import: './dist/error.mjs',
         },
         './react-query': {
           types: './dist/react-query.d.mts',

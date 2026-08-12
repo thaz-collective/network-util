@@ -2,10 +2,10 @@ blockExoticSubdeps: true
 
 catalog:
   '@tanstack/react-query': 5.101.4
-  '@thaz/oxfmt-config': 1.0.0-rc.1
-  '@thaz/oxlint-config': 1.0.0-rc.1
-  '@thaz/temporal-util': 1.0.0-rc.2
-  '@thaz/typescript-config': 1.0.0-rc.1
+  '@thaz/oxfmt-config': 1.0.0-rc.3
+  '@thaz/oxlint-config': 1.0.0-rc.2
+  '@thaz/temporal-util': 1.0.0-rc.3
+  '@thaz/typescript-config': 1.0.0-rc.2
   '@ts-rest/core': 3.53.0-rc.1
   '@types/node': 24.13.3
   '@types/react': 19.2.18
@@ -32,7 +32,10 @@ catalogMode: prefer
 minimumReleaseAge: 4320 # 3 days just to be safe with the uptick of supply chain attacks
 
 minimumReleaseAgeExclude:
-  - '@thaz/temporal-util@1.0.0-rc.2'
+  - '@thaz/oxfmt-config@1.0.0-rc.3'
+  - '@thaz/oxlint-config@1.0.0-rc.2'
+  - '@thaz/temporal-util@1.0.0-rc.3'
+  - '@thaz/typescript-config@1.0.0-rc.2'
   - '@voidzero-dev/vite-plus-core@0.2.9'
   - '@voidzero-dev/vite-plus-darwin-arm64@0.2.9'
   - '@voidzero-dev/vite-plus-darwin-x64@0.2.9'
@@ -46,9 +49,12 @@ minimumReleaseAgeExclude:
 
 overrides:
   vite: 'catalog:'
+  vitest: 'catalog:'
 
 peerDependencyRules:
   allowAny:
     - vite
+    - vitest
   allowedVersions:
     vite: '*'
+    vitest: '*'

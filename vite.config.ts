@@ -1,7 +1,7 @@
+import { defineConfig } from 'vite-plus';
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { externalizeDeps } from 'vite-plugin-externalize-deps';
-import { defineConfig } from 'vite-plus';
 
 import { oxfmtConfig } from '@thaz/oxfmt-config';
 import { nativeConfig, libraryCodeConfigRules } from '@thaz/oxlint-config';
@@ -123,6 +123,8 @@ export default defineConfig({
     rules: {
       ...libraryCodeConfigRules.rules,
       'import/no-default-export': 'off',
+      'vitest/prefer-importing-vitest-globals': 'error',
+      'vitest/no-importing-vitest-globals': 'off',
     },
   },
 });

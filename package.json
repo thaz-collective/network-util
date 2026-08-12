@@ -48,6 +48,7 @@
     "tag": "latest"
   },
   "scripts": {
+    "playwright:setup": "vpx playwright install chromium chromium-headless-shell firefox",
     "prepack": "vp run build",
     "taze": "vpx taze@latest -Ilwr --maturity-period 3",
     "taze:major": "vpx taze@latest major -Ilwr --maturity-period 3",
@@ -68,9 +69,11 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@vitejs/plugin-react": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
     "@vitest/ui": "catalog:",
     "jsdom": "catalog:",
+    "playwright": "catalog:",
     "react": "catalog:",
     "temporal-polyfill": "catalog:",
     "typescript": "catalog:",
@@ -78,7 +81,8 @@
     "vite": "catalog:",
     "vite-plugin-externalize-deps": "catalog:",
     "vite-plus": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "vitest-browser-react": "catalog:"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.101.4",
@@ -96,5 +100,5 @@
   "engines": {
     "node": ">=24"
   },
-  "packageManager": "pnpm@11.20.0"
+  "packageManager": "pnpm@11.21.0"
 }

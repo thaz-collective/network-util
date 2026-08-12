@@ -16,12 +16,6 @@ export function nullish<T extends v.GenericSchema>(baseSchema: T) {
       baseSchema,
       v.null(),
       v.pipe(
-        v.undefined(),
-        v.transform(() => {
-          return null;
-        }),
-      ),
-      v.pipe(
         v.strictObject({}),
         v.transform(() => {
           return null;

@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react';
+import { playwright } from '@vitest/browser-playwright';
 import { externalizeDeps } from 'vite-plugin-externalize-deps';
 import { defineConfig } from 'vite-plus';
 
@@ -84,7 +85,20 @@ export default defineConfig({
         test: {
           name: 'node',
           include: ['test/**/*.node.test.ts'],
-          environment: 'jsdom',
+        },
+      },
+      {
+        extends: true,
+        test: {
+          include: ['test/**/*.browser.test.{ts,tsx}'],
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            instances: [
+              { name: 'browser-chromium', browser: 'chromium' },
+              { name: 'browser-firefox', browser: 'firefox' },
+            ],
+          },
         },
       },
       {

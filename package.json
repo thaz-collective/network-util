@@ -4,7 +4,9 @@
   "description": "Network utilities for fetching and validating data in thaz collective applications",
   "keywords": [
     "fetch",
+    "hook",
     "network",
+    "react",
     "react-query",
     "temporal",
     "utils",
@@ -87,15 +89,6 @@
     "valibot": "^1.4.2"
   },
   "peerDependenciesMeta": {
-    "@tanstack/react-query": {
-      "optional": true
-    },
-    "@ts-rest/core": {
-      "optional": true
-    },
-    "react": {
-      "optional": true
-    },
     "temporal-polyfill": {
       "optional": true
     }

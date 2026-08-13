@@ -5,9 +5,38 @@ import {
   RequestValidationError,
   ResponseValidationError,
   UnexpectedStatusError,
+  ContractPathParamsError,
+  MissingPathParamError,
+  InvalidRequestFieldTypeError,
 } from '#src/fetch/errors';
 
 const issues = [{ message: 'invalid' }];
+
+describe('standardSchemaValidationError', () => {
+  test('stores the given issues', () => {
+    const error = new StandardSchemaValidationError({ issues });
+    expect(error.issues).toBe(issues);
+  });
+
+  test('sets name to StandardSchemaValidationError', () => {
+    const error = new StandardSchemaValidationError({ issues: [] });
+    expect(error.name).toBe('StandardSchemaValidationError');
+  });
+
+  test('is an instanceof Error', () => {
+    const error = new StandardSchemaValidationError({ issues: [] });
+    expect(error).toBeInstanceOf(Error);
+  });
+
+  test('isStandardSchemaValidationError returns true for a real instance', () => {
+    const error = new StandardSchemaValidationError({ issues: [] });
+    expect(StandardSchemaValidationError.isStandardSchemaValidationError(error)).toBeTruthy();
+  });
+
+  test('isStandardSchemaValidationError returns false for a plain Error', () => {
+    expect(StandardSchemaValidationError.isStandardSchemaValidationError(new Error('nope'))).toBeFalsy();
+  });
+});
 
 describe('requestValidationError', () => {
   test('sets name and extends StandardSchemaValidationError', () => {
@@ -72,5 +101,67 @@ describe('unexpectedStatusError', () => {
     const error = new UnexpectedStatusError({ method: 'GET', path: '/posts', status: 418 });
     expect(UnexpectedStatusError.isUnexpectedStatusError(error)).toBeTruthy();
     expect(UnexpectedStatusError.isUnexpectedStatusError(new Error('nope'))).toBeFalsy();
+  });
+});
+
+describe('contractPathParamsError', () => {
+  test('sets name and extends Error', () => {
+    const error = new ContractPathParamsError({ method: 'GET', path: '/posts/:id', tokens: ['id'] });
+    expect(error.name).toBe('ContractPathParamsError');
+    expect(error).toBeInstanceOf(Error);
+  });
+
+  test('carries context fields', () => {
+    const error = new ContractPathParamsError({ method: 'GET', path: '/posts/:id', tokens: ['id'] });
+    expect(error.method).toBe('GET');
+    expect(error.path).toBe('/posts/:id');
+    expect(error.tokens).toStrictEqual(['id']);
+  });
+
+  test('isContractPathParamsError returns true for a real instance and false otherwise', () => {
+    const error = new ContractPathParamsError({ method: 'GET', path: '/posts/:id', tokens: ['id'] });
+    expect(ContractPathParamsError.isContractPathParamsError(error)).toBeTruthy();
+    expect(ContractPathParamsError.isContractPathParamsError(new Error('nope'))).toBeFalsy();
+  });
+});
+
+describe('missingPathParamError', () => {
+  test('sets name and extends Error', () => {
+    const error = new MissingPathParamError({ path: '/posts/:id', token: 'id' });
+    expect(error.name).toBe('MissingPathParamError');
+    expect(error).toBeInstanceOf(Error);
+  });
+
+  test('carries context fields', () => {
+    const error = new MissingPathParamError({ path: '/posts/:id', token: 'id' });
+    expect(error.path).toBe('/posts/:id');
+    expect(error.token).toBe('id');
+  });
+
+  test('isMissingPathParamError returns true for a real instance and false otherwise', () => {
+    const error = new MissingPathParamError({ path: '/posts/:id', token: 'id' });
+    expect(MissingPathParamError.isMissingPathParamError(error)).toBeTruthy();
+    expect(MissingPathParamError.isMissingPathParamError(new Error('nope'))).toBeFalsy();
+  });
+});
+
+describe('invalidRequestFieldTypeError', () => {
+  test('sets name and extends Error', () => {
+    const error = new InvalidRequestFieldTypeError({ method: 'GET', path: '/posts', requestField: 'query' });
+    expect(error.name).toBe('InvalidRequestFieldTypeError');
+    expect(error).toBeInstanceOf(Error);
+  });
+
+  test('carries context fields', () => {
+    const error = new InvalidRequestFieldTypeError({ method: 'GET', path: '/posts', requestField: 'query' });
+    expect(error.method).toBe('GET');
+    expect(error.path).toBe('/posts');
+    expect(error.requestField).toBe('query');
+  });
+
+  test('isInvalidRequestFieldTypeError returns true for a real instance and false otherwise', () => {
+    const error = new InvalidRequestFieldTypeError({ method: 'GET', path: '/posts', requestField: 'query' });
+    expect(InvalidRequestFieldTypeError.isInvalidRequestFieldTypeError(error)).toBeTruthy();
+    expect(InvalidRequestFieldTypeError.isInvalidRequestFieldTypeError(new Error('nope'))).toBeFalsy();
   });
 });

@@ -1,6 +1,12 @@
 import type { StandardSchemaV1 } from './standard-schema';
 import type { InferRequest, InferResponse, RouteDef, RequestField } from './types';
-import { RequestValidationError, ResponseValidationError, UnexpectedStatusError } from './errors';
+import {
+  RequestValidationError,
+  ResponseValidationError,
+  UnexpectedStatusError,
+  InvalidRequestFieldTypeError,
+  MissingPathParamError,
+} from './errors';
 
 export interface CreateFetchClientOptions {
   baseUrl: string;
@@ -31,21 +37,14 @@ export function createFetchClient<T extends Record<string, RouteDef>>(
       const requestHeaders = initializeHeaders(options.headers);
 
       const pathParams = await validateOptionalRequestField(route, 'pathParams', args.pathParams);
-      // TODO: ensure that pathParams matches Record<string, unknown> type or undefined
+      assertRequestFieldIsRecord(pathParams, route, 'pathParams');
       const query = await validateOptionalRequestField(route, 'query', args.query);
-      // TODO: ensure that query matches Record<string, unknown> type or undefined
+      assertRequestFieldIsRecord(query, route, 'query');
       const headers = await validateOptionalRequestField(route, 'headers', args.headers);
-      // TODO: ensure that headers matches Record<string, unknown> type or undefined
+      assertRequestFieldIsRecord(headers, route, 'headers');
       const body = await validateOptionalRequestField(route, 'body', args.body);
 
-      const url = buildUrl(
-        options.baseUrl,
-        route.path,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- validated by standard-schema above
-        pathParams as Record<string, unknown> | undefined,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- validated by standard-schema above
-        query as Record<string, unknown> | undefined,
-      );
+      const url = buildUrl(options.baseUrl, route.path, pathParams, query);
 
       if (headers) {
         for (const [headerKey, value] of Object.entries(headers)) {
@@ -86,6 +85,21 @@ export function createFetchClient<T extends Record<string, RouteDef>>(
         status: res.status,
       });
     };
+  }
+}
+
+// TODO: Check if this is correct
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function assertRequestFieldIsRecord(
+  value: unknown,
+  route: RouteDef,
+  field: RequestField,
+): asserts value is Record<string, unknown> | undefined {
+  if (value !== undefined && !isPlainObject(value)) {
+    throw new InvalidRequestFieldTypeError({ method: route.method, path: route.path, requestField: field });
   }
 }
 
@@ -139,8 +153,7 @@ export function buildUrl(
 ): string {
   const substitutedPath = path.replaceAll(/:(?<token>[^/?]+)/g, (_match, token: string) => {
     if (!pathParams || !(token in pathParams)) {
-      // TODO: Add specialized Error for this.
-      throw new Error(`Missing path param "${token}" for path "${path}"`);
+      throw new MissingPathParamError({ path, token });
     }
 
     return encodeURIComponent(String(pathParams[token]));

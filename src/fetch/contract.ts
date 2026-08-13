@@ -1,4 +1,5 @@
 import type { RouteDef } from './types';
+import { ContractPathParamsError } from './errors';
 
 /**
  * Anchors type inference over a flat map of routes. Also performs a runtime, authoring-time
@@ -9,10 +10,11 @@ export function defineContract<T extends Record<string, RouteDef>>(routes: T): T
   for (const route of Object.values(routes)) {
     const tokens = route.path.match(/:(?<token>[^/?]+)/g);
     if (tokens && tokens.length > 0 && !route.pathParams) {
-      // TODO: Add specialized Error for this.
-      throw new Error(
-        `Route "${route.method} ${route.path}" declares path token(s) ${tokens.join(', ')} but has no "pathParams" schema.`,
-      );
+      throw new ContractPathParamsError({
+        method: route.method,
+        path: route.path,
+        tokens: tokens.map((token) => token.slice(1)),
+      });
     }
   }
   return routes;

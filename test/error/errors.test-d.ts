@@ -1,7 +1,10 @@
 import { describe, test, expectTypeOf } from 'vite-plus/test';
 
-import type { NetworkErrorProps } from '#src/error/errors';
-import { NetworkError } from '#src/error/errors';
+import type { InferOutput } from 'valibot';
+
+import type { NetworkErrorProps, NetworkWithMessageListErrorProps } from '#src/error/errors';
+import type { response } from '#src/valibot/response-message/response';
+import { NetworkError, NetworkWithMessageListError } from '#src/error/errors';
 
 describe('networkError', () => {
   test('constructor accepts NetworkErrorProps', () => {
@@ -36,5 +39,23 @@ describe('networkError', () => {
   test('isNetworkError narrows unknown to NetworkError', () => {
     type IsNetworkError = typeof NetworkError.isNetworkError;
     expectTypeOf<ReturnType<IsNetworkError>>().toEqualTypeOf<boolean>();
+  });
+});
+
+describe('networkWithMessageListError', () => {
+  test('constructor accepts NetworkWithMessageListErrorProps', () => {
+    expectTypeOf(NetworkWithMessageListError).toBeConstructibleWith({ statusCode: 400, messageList: [] });
+  });
+
+  test('messageList matches the response schema message_list output', () => {
+    expectTypeOf<NetworkWithMessageListErrorProps['messageList']>().toEqualTypeOf<
+      InferOutput<typeof response>['message_list']
+    >();
+  });
+
+  test('messageList property is exposed on instances', () => {
+    const error = new NetworkWithMessageListError({ statusCode: 400, messageList: [] });
+    expectTypeOf(error.messageList).toEqualTypeOf<NetworkWithMessageListErrorProps['messageList']>();
+    expectTypeOf(error.statusCode).toEqualTypeOf<number>();
   });
 });

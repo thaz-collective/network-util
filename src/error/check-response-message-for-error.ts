@@ -8,7 +8,7 @@ import { NetworkWithMessageListError } from './errors';
  * Guards against server-returned ERROR messages embedded in an otherwise successful response.
  *
  * Parses the response body against the `response` schema when the `Content-Type` is JSON. If any
- * message in `message_list` has type `ERROR`, throws a `NetworkErrorWithMessageList` so the caller
+ * message in `message_list` has type `ERROR`, throws a `NetworkWithMessageListError` so the caller
  * can surface the server-provided error details. Call this after `refineNetworkError`.
  *
  * @param body The parsed response body.

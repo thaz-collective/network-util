@@ -330,6 +330,12 @@ describe('buildUrl', () => {
     );
   });
 
+  test('throws MissingPathParamError when a pathParams key is present but explicitly undefined', () => {
+    expect(() => buildUrl('https://api.example.com', '/posts/:id', { id: undefined }, undefined)).toThrow(
+      MissingPathParamError,
+    );
+  });
+
   test('missingPathParamError carries the path and token', () => {
     let caught: unknown;
     try {
@@ -368,5 +374,17 @@ describe('buildUrl', () => {
 
   test('produces no "?" when no query object is given', () => {
     expect(buildUrl('https://api.example.com', '/posts', undefined, undefined)).not.toContain('?');
+  });
+
+  test('omits null query values entirely', () => {
+    expect(buildUrl('https://api.example.com', '/posts', undefined, { a: 1, b: null })).toBe(
+      'https://api.example.com/posts?a=1',
+    );
+  });
+
+  test('omits null and undefined items within an array query value', () => {
+    expect(buildUrl('https://api.example.com', '/posts', undefined, { tag: ['a', null, 'b', undefined] })).toBe(
+      'https://api.example.com/posts?tag=a&tag=b',
+    );
   });
 });

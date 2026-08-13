@@ -1,6 +1,7 @@
 import type { StandardSchemaV1 } from './standard-schema';
 import type { Method, RequestField } from './types';
 
+/** Constructor options for `StandardSchemaValidationError`. */
 export interface StandardSchemaValidationErrorProps {
   readonly issues: readonly StandardSchemaV1.Issue[];
 }
@@ -11,10 +12,10 @@ export interface StandardSchemaValidationErrorProps {
 export class StandardSchemaValidationError extends Error implements StandardSchemaValidationErrorProps {
   readonly issues: readonly StandardSchemaV1.Issue[];
 
-  constructor(props: StandardSchemaValidationErrorProps) {
+  constructor(data: Readonly<StandardSchemaValidationErrorProps>) {
     super();
     this.name = 'StandardSchemaValidationError';
-    this.issues = props.issues;
+    this.issues = data.issues;
   }
 
   /**
@@ -28,11 +29,13 @@ export class StandardSchemaValidationError extends Error implements StandardSche
   }
 }
 
+/** Shared route-context fields common to this module's error constructor options. */
 export interface BaseValidationErrorProps {
   readonly method: Method;
   readonly path: string;
 }
 
+/** Constructor options for `RequestValidationError`. */
 export interface RequestValidationErrorProps extends BaseValidationErrorProps {
   readonly requestField: RequestField;
 }
@@ -46,12 +49,12 @@ export class RequestValidationError extends StandardSchemaValidationError implem
   readonly path: string;
   readonly requestField: RequestField;
 
-  constructor(props: RequestValidationErrorProps & StandardSchemaValidationErrorProps) {
-    super(props);
+  constructor(data: Readonly<RequestValidationErrorProps> & Readonly<StandardSchemaValidationErrorProps>) {
+    super(data);
     this.name = 'RequestValidationError';
-    this.method = props.method;
-    this.path = props.path;
-    this.requestField = props.requestField;
+    this.method = data.method;
+    this.path = data.path;
+    this.requestField = data.requestField;
   }
 
   /**
@@ -65,6 +68,7 @@ export class RequestValidationError extends StandardSchemaValidationError implem
   }
 }
 
+/** Constructor options for `ResponseValidationError`. */
 export interface ResponseValidationErrorProps extends BaseValidationErrorProps {
   readonly status: number;
 }
@@ -78,12 +82,12 @@ export class ResponseValidationError extends StandardSchemaValidationError imple
   readonly path: string;
   readonly status: number;
 
-  constructor(props: ResponseValidationErrorProps & StandardSchemaValidationErrorProps) {
-    super(props);
+  constructor(data: Readonly<ResponseValidationErrorProps> & Readonly<StandardSchemaValidationErrorProps>) {
+    super(data);
     this.name = 'ResponseValidationError';
-    this.method = props.method;
-    this.path = props.path;
-    this.status = props.status;
+    this.method = data.method;
+    this.path = data.path;
+    this.status = data.status;
   }
 
   /**
@@ -97,6 +101,7 @@ export class ResponseValidationError extends StandardSchemaValidationError imple
   }
 }
 
+/** Constructor options for `ContractPathParamsError`. */
 export interface ContractPathParamsErrorProps extends BaseValidationErrorProps {
   readonly tokens: readonly string[];
 }
@@ -110,14 +115,14 @@ export class ContractPathParamsError extends Error implements ContractPathParams
   readonly path: string;
   readonly tokens: readonly string[];
 
-  constructor(props: ContractPathParamsErrorProps) {
+  constructor(data: Readonly<ContractPathParamsErrorProps>) {
     super(
-      `Route "${props.method} ${props.path}" declares path token(s) ${props.tokens.join(', ')} but has no "pathParams" schema.`,
+      `Route "${data.method} ${data.path}" declares path token(s) ${data.tokens.join(', ')} but has no "pathParams" schema.`,
     );
     this.name = 'ContractPathParamsError';
-    this.method = props.method;
-    this.path = props.path;
-    this.tokens = props.tokens;
+    this.method = data.method;
+    this.path = data.path;
+    this.tokens = data.tokens;
   }
 
   /**
@@ -131,6 +136,7 @@ export class ContractPathParamsError extends Error implements ContractPathParams
   }
 }
 
+/** Constructor options for `ContractResponseStatusError`. */
 export interface ContractResponseStatusErrorProps extends BaseValidationErrorProps {
   readonly status: string;
 }
@@ -144,12 +150,12 @@ export class ContractResponseStatusError extends Error implements ContractRespon
   readonly path: string;
   readonly status: string;
 
-  constructor(props: ContractResponseStatusErrorProps) {
-    super(`Route "${props.method} ${props.path}" declares a non-numeric response status "${props.status}".`);
+  constructor(data: Readonly<ContractResponseStatusErrorProps>) {
+    super(`Route "${data.method} ${data.path}" declares a non-numeric response status "${data.status}".`);
     this.name = 'ContractResponseStatusError';
-    this.method = props.method;
-    this.path = props.path;
-    this.status = props.status;
+    this.method = data.method;
+    this.path = data.path;
+    this.status = data.status;
   }
 
   /**
@@ -163,6 +169,7 @@ export class ContractResponseStatusError extends Error implements ContractRespon
   }
 }
 
+/** Constructor options for `MissingPathParamError`. */
 export interface MissingPathParamErrorProps {
   readonly path: string;
   readonly token: string;
@@ -176,11 +183,11 @@ export class MissingPathParamError extends Error implements MissingPathParamErro
   readonly path: string;
   readonly token: string;
 
-  constructor(props: MissingPathParamErrorProps) {
-    super(`Missing path param "${props.token}" for path "${props.path}"`);
+  constructor(data: Readonly<MissingPathParamErrorProps>) {
+    super(`Missing path param "${data.token}" for path "${data.path}"`);
     this.name = 'MissingPathParamError';
-    this.path = props.path;
-    this.token = props.token;
+    this.path = data.path;
+    this.token = data.token;
   }
 
   /**
@@ -194,6 +201,7 @@ export class MissingPathParamError extends Error implements MissingPathParamErro
   }
 }
 
+/** Constructor options for `InvalidRequestFieldTypeError`. */
 export interface InvalidRequestFieldTypeErrorProps extends BaseValidationErrorProps {
   readonly requestField: RequestField;
 }
@@ -207,14 +215,14 @@ export class InvalidRequestFieldTypeError extends Error implements InvalidReques
   readonly path: string;
   readonly requestField: RequestField;
 
-  constructor(props: InvalidRequestFieldTypeErrorProps) {
+  constructor(data: Readonly<InvalidRequestFieldTypeErrorProps>) {
     super(
-      `Validated "${props.requestField}" for route "${props.method} ${props.path}" must be a plain object or undefined.`,
+      `Validated "${data.requestField}" for route "${data.method} ${data.path}" must be a plain object or undefined.`,
     );
     this.name = 'InvalidRequestFieldTypeError';
-    this.method = props.method;
-    this.path = props.path;
-    this.requestField = props.requestField;
+    this.method = data.method;
+    this.path = data.path;
+    this.requestField = data.requestField;
   }
 
   /**
@@ -228,6 +236,7 @@ export class InvalidRequestFieldTypeError extends Error implements InvalidReques
   }
 }
 
+/** Constructor options for `UnexpectedStatusError`. */
 export interface UnexpectedStatusErrorProps extends BaseValidationErrorProps {
   readonly status: number;
 }
@@ -240,12 +249,12 @@ export class UnexpectedStatusError extends Error implements UnexpectedStatusErro
   readonly path: string;
   readonly status: number;
 
-  constructor(props: UnexpectedStatusErrorProps) {
+  constructor(data: Readonly<UnexpectedStatusErrorProps>) {
     super();
     this.name = 'UnexpectedStatusError';
-    this.method = props.method;
-    this.path = props.path;
-    this.status = props.status;
+    this.method = data.method;
+    this.path = data.path;
+    this.status = data.status;
   }
 
   /**

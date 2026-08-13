@@ -3,8 +3,14 @@ import type { RouteDef, Contract } from './types';
 import { ContractPathParamsError, ContractResponseStatusError } from './errors';
 import { contractHeadersSymbol } from './types';
 
+/** Contract-level options for `defineContract`. */
 export interface DefineContractOptions<G extends StandardSchemaV1 | undefined = undefined> {
-  /** A typesafe schema applied to every route's headers, merged with each route's own `headers` schema. */
+  /**
+   * A typesafe schema applied to every route's headers, merged with each route's own `headers`
+   * schema. Prefer non-strict object schemas (e.g. `v.object`, not `v.strictObject`) here and on
+   * each route's `headers` — since the merged input is validated against each schema separately,
+   * a strict schema will reject keys that only the other schema recognizes.
+   */
   headers?: G;
 }
 

@@ -8,7 +8,7 @@ import { NetworkWithMessageListError, NetworkError } from './errors';
  * Asserts that `statusCode` equals `successCode`, throwing the appropriate error type if not.
  *
  * When the status does not match, attempts to parse the body against the `response` schema.
- * A successful parse produces a `NetworkErrorWithMessageList`; a failed parse falls back to a
+ * A successful parse produces a `NetworkWithMessageListError`; a failed parse falls back to a
  * plain `NetworkError`. Intended as a catch-all — handle any status codes that need special
  * treatment before calling this function.
  *

@@ -9,19 +9,31 @@ import {
 } from './errors';
 import { contractHeadersSymbol } from './types';
 
+/** Client-wide options for `createFetchClient`. */
 export interface CreateFetchClientOptions {
+  /** Prefixed onto every route's `path` when building the request URL. */
   baseUrl: string;
 
-  /** The initial set of headers passed in on every client call */
+  /**
+   * The initial set of headers applied to every call made through the client. Overridden by any
+   * headers derived from the contract's global/route schemas, which are in turn overridden by a
+   * per-call `FetchClientRequestOptions.headers`.
+   */
   headers?: HeadersInit;
 }
 
+/** Per-call options accepted as the second argument to every route function on a `FetchClient`. */
 export interface FetchClientRequestOptions {
+  /** Forwarded to the underlying `fetch` call, allowing the request to be canceled. */
   signal?: AbortSignal;
   /** Merged in last, overriding any headers derived from the contract's schemas or default client headers. */
   headers?: HeadersInit;
 }
 
+/**
+ * The client object returned by `createFetchClient`: one async function per route in the contract,
+ * typed from that route's schemas via `InferRequest`/`InferResponse`.
+ */
 export type FetchClient<T extends RouteDefMap<T>> = {
   [K in keyof T]: (
     args: InferRequest<T[K]>,
@@ -29,6 +41,16 @@ export type FetchClient<T extends RouteDefMap<T>> = {
   ) => Promise<InferResponse<T[K]>>;
 };
 
+/**
+ * Builds a typed `FetchClient` from a contract returned by `defineContract`. Each route becomes an
+ * async function that validates its request parts, sends the request, and validates the response
+ * body against the schema declared for the returned status code — throwing `RequestValidationError`,
+ * `ResponseValidationError`, or `UnexpectedStatusError` as appropriate.
+ *
+ * @param contract The contract (from `defineContract`) to build a client for.
+ * @param options Client-wide settings: `baseUrl` and default headers.
+ * @returns A `FetchClient` with one method per route in `contract`.
+ */
 export function createFetchClient<T extends Contract<RouteDefMap<T>, StandardSchemaV1 | undefined>>(
   contract: T,
   options: CreateFetchClientOptions,
@@ -98,16 +120,16 @@ export function createFetchClient<T extends Contract<RouteDefMap<T>, StandardSch
       const responseSchema = route.responses[res.status];
       if (responseSchema) {
         const result = await validateAgainstStandardSchema(responseSchema, parsedBody);
-        if (!result.success) {
-          throw new ResponseValidationError({
-            issues: result.issues,
-            method: route.method,
-            path: route.path,
-            status: res.status,
-          });
+        if (result.success) {
+          return { status: res.status, body: result.value };
         }
 
-        return { status: res.status, body: result.value };
+        throw new ResponseValidationError({
+          issues: result.issues,
+          method: route.method,
+          path: route.path,
+          status: res.status,
+        });
       }
 
       throw new UnexpectedStatusError({
@@ -119,11 +141,11 @@ export function createFetchClient<T extends Contract<RouteDefMap<T>, StandardSch
   }
 }
 
-function assertIsRecordObject(value: unknown): value is Record<string, unknown> {
+export function assertIsRecordObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function assertRequestFieldIsRecordObjectOrUndefined(
+export function assertRequestFieldIsRecordObjectOrUndefined(
   value: unknown,
   route: RouteDef,
   field: RequestField,
@@ -133,6 +155,14 @@ function assertRequestFieldIsRecordObjectOrUndefined(
   }
 }
 
+/**
+ * Validates `data` against a standard-schema and returns a discriminated result instead of
+ * throwing, so callers can decide how to handle failure.
+ *
+ * @param schema The standard-schema to validate against.
+ * @param data The value to validate.
+ * @returns `{ success: true; value }` on success, or `{ success: false; issues }` on failure.
+ */
 export async function validateAgainstStandardSchema<T extends StandardSchemaV1>(
   schema: T,
   data: unknown,
@@ -148,6 +178,16 @@ export async function validateAgainstStandardSchema<T extends StandardSchemaV1>(
   return { success: true, value: result.value };
 }
 
+/**
+ * Validates `value` against `schema` if given, throwing `RequestValidationError` on failure.
+ * Returns `undefined` immediately, without validating, if `schema` is `undefined`.
+ *
+ * @param schema The standard-schema to validate against, or `undefined` to skip validation.
+ * @param value The value to validate.
+ * @param route The route the value belongs to — used for the thrown error's context.
+ * @param field Which request part `value` is — used for the thrown error's context.
+ * @returns The validated value, or `undefined` if `schema` was `undefined`.
+ */
 export async function validateOptionalSchema(
   schema: StandardSchemaV1 | undefined,
   value: unknown,
@@ -171,10 +211,32 @@ export async function validateOptionalSchema(
   });
 }
 
+/**
+ * Convenience wrapper over `validateOptionalSchema` that looks up the schema for `field` from
+ * `route` itself, rather than requiring the caller to pass it separately.
+ *
+ * @param route The route whose `field` schema should be used.
+ * @param field Which of the route's request parts to validate.
+ * @param value The value to validate.
+ * @returns The validated value, or `undefined` if the route declares no schema for `field`.
+ */
 export async function validateOptionalRequestField(route: RouteDef, field: RequestField, value: unknown) {
   return await validateOptionalSchema(route[field], value, route, field);
 }
 
+/**
+ * Builds the final request URL: substitutes `:token` placeholders in `path` from `pathParams`
+ * (URI-encoding each value, and throwing `MissingPathParamError` for any token with no matching
+ * key or an `undefined` value), then appends `query` as query string params. `null`/`undefined`
+ * query values — and `null`/`undefined` items within an array query value — are omitted entirely
+ * rather than serialized.
+ *
+ * @param baseUrl Prefixed onto the substituted path.
+ * @param path The route path, with optional `:token` placeholders.
+ * @param pathParams Values for each `:token` placeholder in `path`.
+ * @param query Query string params. Array values are appended as repeated keys.
+ * @returns The final request URL as a string.
+ */
 export function buildUrl(
   baseUrl: string,
   path: string,
@@ -182,10 +244,11 @@ export function buildUrl(
   query: Record<string, unknown> | undefined,
 ): string {
   const substitutedPath = path.replaceAll(/:(?<token>[^/?]+)/g, (_match, token: string) => {
-    if (!pathParams || !(token in pathParams)) {
+    if (!pathParams || pathParams[token] === undefined) {
       throw new MissingPathParamError({ path, token });
     }
 
+    // oxlint-disable-next-line typescript/no-base-to-string -- pathParams values are validated by the route's schema; arbitrary objects are the caller's responsibility
     return encodeURIComponent(String(pathParams[token]));
   });
 
@@ -193,12 +256,16 @@ export function buildUrl(
 
   if (query) {
     for (const [key, value] of Object.entries(query)) {
-      if (value === undefined) {
+      if (value === undefined || value === null) {
         continue;
       }
 
       if (Array.isArray(value)) {
         for (const item of value) {
+          if (item === undefined || item === null) {
+            continue;
+          }
+
           url.searchParams.append(key, stringifyQueryValue(item));
         }
       } else {

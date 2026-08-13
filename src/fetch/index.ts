@@ -4,5 +4,5 @@ export * from './errors';
 
 export * from './contract';
 
-export type { FetchClient, CreateFetchClientOptions } from './client';
+export type { FetchClient, CreateFetchClientOptions, FetchClientRequestOptions } from './client';
 export { createFetchClient } from './client';

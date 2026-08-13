@@ -4,5 +4,7 @@ export * from './instant';
 export * from './nullish';
 export * from './plain-date';
 export * from './plain-date-time';
+export * from './plain-month-day';
 export * from './plain-time';
+export * from './plain-year-month';
 export * from './zoned-date-time';

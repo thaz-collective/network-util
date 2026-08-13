@@ -80,7 +80,7 @@ describe('createFetchClient (browser)', () => {
   test('throws RequestValidationError for invalid request data', async () => {
     const client = createFetchClient(contract, { baseUrl: 'https://api.example.com' });
 
-    // oxlint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- deliberately violating the contract's type to exercise the validation-failure path
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- deliberately violating the contract's type to exercise the validation-failure path
     const invalidArgs = { pathParams: { id: {} } } as unknown as Parameters<typeof client.getPost>[0];
     await expect(client.getPost(invalidArgs)).rejects.toBeInstanceOf(RequestValidationError);
   });

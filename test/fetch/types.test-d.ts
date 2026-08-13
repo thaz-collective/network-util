@@ -54,7 +54,7 @@ describe('fetch dsl type inference', () => {
       body: { title: string };
     }>();
 
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- asserting the mapped type produces zero keys
+    // oxlint-disable-next-line @typescript-eslint/no-empty-object-type -- asserting the mapped type produces zero keys
     expectTypeOf<InferRequest<(typeof contract)['listPosts']>>().toEqualTypeOf<{}>();
   });
 

@@ -119,7 +119,7 @@ describe('createFetchClient', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
     const client = createFetchClient(contract, { baseUrl: 'https://api.example.com' });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- deliberately violating the contract's type to exercise the validation-failure path
+    // oxlint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- deliberately violating the contract's type to exercise the validation-failure path
     const invalidArgs = { pathParams: { id: {} } } as unknown as Parameters<typeof client.getPost>[0];
     await expect(client.getPost(invalidArgs)).rejects.toBeInstanceOf(RequestValidationError);
     expect(fetchSpy).not.toHaveBeenCalled();

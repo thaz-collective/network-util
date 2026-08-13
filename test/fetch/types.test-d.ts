@@ -96,17 +96,13 @@ describe('global headers', () => {
   );
 
   test('merges global and route headers into a single required object', () => {
-    expectTypeOf<
-      InferRequest<(typeof contractWithGlobalHeaders)['withOwnHeaders'], typeof globalHeadersSchema>
-    >().toEqualTypeOf<{
+    expectTypeOf<InferRequest<(typeof contractWithGlobalHeaders)['withOwnHeaders']>>().toEqualTypeOf<{
       headers: { 'x-tenant': string; 'x-route': string };
     }>();
   });
 
   test('applies global headers alone when a route has no headers schema', () => {
-    expectTypeOf<
-      InferRequest<(typeof contractWithGlobalHeaders)['withoutOwnHeaders'], typeof globalHeadersSchema>
-    >().toEqualTypeOf<{
+    expectTypeOf<InferRequest<(typeof contractWithGlobalHeaders)['withoutOwnHeaders']>>().toEqualTypeOf<{
       headers: { 'x-tenant': string };
     }>();
   });

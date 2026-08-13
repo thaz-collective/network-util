@@ -16,18 +16,16 @@ export interface CreateFetchClientOptions {
 
 type RouteDefMap<T> = { [K in keyof T as K extends string ? K : never]: RouteDef };
 
-export type FetchClient<T extends RouteDefMap<T>, G extends StandardSchemaV1 | undefined = undefined> = {
-  [K in keyof T]: (args: InferRequest<T[K], G>) => Promise<InferResponse<T[K]>>;
+export type FetchClient<T extends RouteDefMap<T>> = {
+  [K in keyof T]: (args: InferRequest<T[K]>) => Promise<InferResponse<T[K]>>;
 };
-
-type ContractGlobalHeaders<T> = T extends ContractHeaders<infer G> ? G : undefined;
 
 export function createFetchClient<T extends RouteDefMap<T>>(
   contract: T,
   options: CreateFetchClientOptions,
-): FetchClient<T, ContractGlobalHeaders<T>> {
+): FetchClient<T> {
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- built up incrementally below
-  const client = {} as unknown as FetchClient<T, ContractGlobalHeaders<T>>;
+  const client = {} as unknown as FetchClient<T>;
   const globalHeadersSchema = (contract as ContractHeaders)[contractHeadersSymbol];
 
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic-to-concrete boundary

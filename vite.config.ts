@@ -18,18 +18,23 @@ export default defineConfig({
     tasks: {
       build: {
         command: 'vp pack',
+        input: [{ auto: true }, '!coverage/**'],
       },
       test: {
         command: 'vp test',
+        input: [{ auto: true }, '!coverage/**'],
       },
       check: {
         command: 'vp check',
+        input: [{ auto: true }, '!coverage/**'],
       },
       fmt: {
         command: 'vp fmt',
+        input: [{ auto: true }, '!coverage/**'],
       },
       lint: {
         command: 'vp lint',
+        input: [{ auto: true }, '!coverage/**'],
       },
     },
   },

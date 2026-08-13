@@ -1,5 +1,5 @@
 import type { StandardSchemaV1 } from './standard-schema';
-import type { InferRequest, InferResponse, RouteDef, RequestField, ContractHeaders } from './types';
+import type { InferRequest, InferResponse, RouteDef, RequestField, RouteDefMap, ContractHeaders } from './types';
 import {
   RequestValidationError,
   ResponseValidationError,
@@ -14,8 +14,6 @@ export interface CreateFetchClientOptions {
   headers?: HeadersInit | (() => HeadersInit);
 }
 
-type RouteDefMap<T> = { [K in keyof T as K extends string ? K : never]: RouteDef };
-
 export type FetchClient<T extends RouteDefMap<T>> = {
   [K in keyof T]: (args: InferRequest<T[K]>) => Promise<InferResponse<T[K]>>;
 };
@@ -24,17 +22,14 @@ export function createFetchClient<T extends RouteDefMap<T>>(
   contract: T,
   options: CreateFetchClientOptions,
 ): FetchClient<T> {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- built up incrementally below
-  const client = {} as unknown as FetchClient<T>;
   const globalHeadersSchema = (contract as ContractHeaders)[contractHeadersSymbol];
 
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic-to-concrete boundary
-  for (const [key, route] of Object.entries(contract) as [keyof T, RouteDef][]) {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic-to-concrete boundary
-    client[key] = createRouteFn(route);
-  }
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic-to-concrete boundary: contract's values are RouteDef by construction
+  const routeEntries = Object.entries(contract) as [keyof T, RouteDef][];
+  const entries = routeEntries.map(([key, route]) => [key, createRouteFn(route)] as const);
 
-  return client;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic-to-concrete boundary: entries are built from contract's own keys/routes
+  return Object.fromEntries(entries) as FetchClient<T>;
 
   function createRouteFn(route: RouteDef) {
     return async (args: Partial<Record<RequestField, unknown>>) => {

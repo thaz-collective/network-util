@@ -30,11 +30,11 @@ export interface RouteDef<
   responses: TResponses;
 }
 
-export type InferPathParams<T extends RouteDef> = T['pathParams'] extends StandardSchemaV1
+export type InferRequestPathParams<T extends RouteDef> = T['pathParams'] extends StandardSchemaV1
   ? StandardSchemaV1.InferInput<T['pathParams']>
   : undefined;
 
-export type InferQuery<T extends RouteDef> = T['query'] extends StandardSchemaV1
+export type InferRequestQuery<T extends RouteDef> = T['query'] extends StandardSchemaV1
   ? StandardSchemaV1.InferInput<T['query']>
   : undefined;
 
@@ -43,12 +43,23 @@ type Simplify<T> = { [K in keyof T]: T[K] } & {};
 /** Extracts the global headers schema a route was tagged with by `defineContract`, if any. */
 export type RouteGlobalHeaders<T> = T extends ContractHeaders<infer G> ? G : undefined;
 
-export type InferHeaders<T extends RouteDef> = Simplify<
-  (RouteGlobalHeaders<T> extends StandardSchemaV1 ? StandardSchemaV1.InferInput<RouteGlobalHeaders<T>> : unknown) &
-    (T['headers'] extends StandardSchemaV1 ? StandardSchemaV1.InferInput<T['headers']> : unknown)
->;
+export type InferRequestGlobalHeaders<T extends RouteDef> =
+  RouteGlobalHeaders<T> extends StandardSchemaV1 ? StandardSchemaV1.InferInput<RouteGlobalHeaders<T>> : undefined;
 
-export type InferBody<T extends RouteDef> = T['body'] extends StandardSchemaV1
+export type InferRequestLocalHeaders<T extends RouteDef> = T['headers'] extends StandardSchemaV1
+  ? StandardSchemaV1.InferInput<T['headers']>
+  : undefined;
+
+export type InferRequestHeaders<T extends RouteDef> =
+  RouteGlobalHeaders<T> extends StandardSchemaV1
+    ? T['headers'] extends StandardSchemaV1
+      ? Simplify<InferRequestGlobalHeaders<T> & InferRequestLocalHeaders<T>>
+      : InferRequestGlobalHeaders<T>
+    : T['headers'] extends StandardSchemaV1
+      ? InferRequestLocalHeaders<T>
+      : undefined;
+
+export type InferRequestBody<T extends RouteDef> = T['body'] extends StandardSchemaV1
   ? StandardSchemaV1.InferInput<T['body']>
   : undefined;
 
@@ -62,12 +73,12 @@ export type InferRequest<T extends RouteDef> = {
     : T[K] extends StandardSchemaV1
       ? K
       : never]: K extends 'pathParams'
-    ? InferPathParams<T>
+    ? InferRequestPathParams<T>
     : K extends 'query'
-      ? InferQuery<T>
+      ? InferRequestQuery<T>
       : K extends 'headers'
-        ? InferHeaders<T>
-        : InferBody<T>;
+        ? InferRequestHeaders<T>
+        : InferRequestBody<T>;
 };
 
 export type InferResponse<
@@ -79,3 +90,14 @@ export type InferResponse<
     body: StandardSchemaV1.InferOutput<T['responses'][K]>;
   };
 }[S];
+
+export type RouteDefMap<T> = { [K in keyof T as K extends string ? K : never]: RouteDef };
+
+/**
+ * The type returned by `defineContract`: the route map, with each route (and the map itself) tagged
+ * with the optional global headers schema `G`. Centralizing this here — rather than an inline literal
+ * in `contract.ts` — means adding future contract-level options only requires extending this one type.
+ */
+export type Contract<T extends RouteDefMap<T>, G extends StandardSchemaV1 | undefined = undefined> = {
+  [K in keyof T]: T[K] & ContractHeaders<G>;
+} & ContractHeaders<G>;

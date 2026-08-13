@@ -2,7 +2,17 @@ import { describe, test, expectTypeOf } from 'vite-plus/test';
 
 import * as v from 'valibot';
 
-import type { RouteDef, InferRequest, InferResponse } from '#src/fetch/types';
+import type {
+  RouteDef,
+  InferRequest,
+  InferResponse,
+  InferRequestPathParams,
+  InferRequestQuery,
+  InferRequestHeaders,
+  InferRequestLocalHeaders,
+  InferRequestGlobalHeaders,
+  InferRequestBody,
+} from '#src/fetch/types';
 import { createFetchClient } from '#src/fetch/client';
 import { defineContract } from '#src/fetch/contract';
 
@@ -46,6 +56,21 @@ describe('fetch dsl type inference', () => {
 
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- asserting the mapped type produces zero keys
     expectTypeOf<InferRequest<(typeof contract)['listPosts']>>().toEqualTypeOf<{}>();
+  });
+
+  test('inferRequestPathParams infers the path params schema input, or undefined when absent', () => {
+    expectTypeOf<InferRequestPathParams<(typeof contract)['getPost']>>().toEqualTypeOf<{ id: string }>();
+    expectTypeOf<InferRequestPathParams<(typeof contract)['createPost']>>().toEqualTypeOf<undefined>();
+  });
+
+  test('inferRequestQuery infers the query schema input, or undefined when absent', () => {
+    expectTypeOf<InferRequestQuery<(typeof contract)['getPost']>>().toEqualTypeOf<{ search?: string | undefined }>();
+    expectTypeOf<InferRequestQuery<(typeof contract)['createPost']>>().toEqualTypeOf<undefined>();
+  });
+
+  test('inferRequestBody infers the body schema input, or undefined when absent', () => {
+    expectTypeOf<InferRequestBody<(typeof contract)['createPost']>>().toEqualTypeOf<{ title: string }>();
+    expectTypeOf<InferRequestBody<(typeof contract)['getPost']>>().toEqualTypeOf<undefined>();
   });
 
   test('inferResponse is a discriminated union over declared statuses', () => {
@@ -105,6 +130,39 @@ describe('global headers', () => {
     expectTypeOf<InferRequest<(typeof contractWithGlobalHeaders)['withoutOwnHeaders']>>().toEqualTypeOf<{
       headers: { 'x-tenant': string };
     }>();
+  });
+
+  test('inferRequestLocalHeaders infers only the route-level headers schema input', () => {
+    expectTypeOf<InferRequestLocalHeaders<(typeof contractWithGlobalHeaders)['withOwnHeaders']>>().toEqualTypeOf<{
+      'x-route': string;
+    }>();
+    expectTypeOf<
+      InferRequestLocalHeaders<(typeof contractWithGlobalHeaders)['withoutOwnHeaders']>
+    >().toEqualTypeOf<undefined>();
+  });
+
+  test('inferRequestGlobalHeaders infers only the contract-level headers schema input', () => {
+    expectTypeOf<InferRequestGlobalHeaders<(typeof contractWithGlobalHeaders)['withOwnHeaders']>>().toEqualTypeOf<{
+      'x-tenant': string;
+    }>();
+    expectTypeOf<InferRequestGlobalHeaders<(typeof contractWithGlobalHeaders)['withoutOwnHeaders']>>().toEqualTypeOf<{
+      'x-tenant': string;
+    }>();
+    expectTypeOf<InferRequestGlobalHeaders<(typeof contract)['getPost']>>().toEqualTypeOf<undefined>();
+  });
+
+  test('inferRequestHeaders merges global and local headers, tolerating either being absent', () => {
+    expectTypeOf<InferRequestHeaders<(typeof contractWithGlobalHeaders)['withOwnHeaders']>>().toEqualTypeOf<{
+      'x-tenant': string;
+      'x-route': string;
+    }>();
+    expectTypeOf<InferRequestHeaders<(typeof contractWithGlobalHeaders)['withoutOwnHeaders']>>().toEqualTypeOf<{
+      'x-tenant': string;
+    }>();
+  });
+
+  test('inferRequestHeaders is undefined when there are no global or local headers', () => {
+    expectTypeOf<InferRequestHeaders<(typeof contract)['getPost']>>().toEqualTypeOf<undefined>();
   });
 
   test('createFetchClient threads the global headers schema through to each route', () => {

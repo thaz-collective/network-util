@@ -1,5 +1,5 @@
 import type { StandardSchemaV1 } from './standard-schema';
-import type { RouteDef, ContractHeaders } from './types';
+import type { RouteDef, Contract } from './types';
 import { ContractPathParamsError } from './errors';
 import { contractHeadersSymbol } from './types';
 
@@ -19,7 +19,7 @@ export interface DefineContractOptions<G extends StandardSchemaV1 | undefined = 
 export function defineContract<T extends Record<string, RouteDef>, G extends StandardSchemaV1 | undefined = undefined>(
   routes: T,
   options?: DefineContractOptions<G>,
-): { [K in keyof T]: T[K] & ContractHeaders<G> } & ContractHeaders<G> {
+): Contract<T, G> {
   for (const route of Object.values(routes)) {
     const tokens = route.path.match(/:(?<token>[^/?]+)/g);
     if (tokens && tokens.length > 0 && !route.pathParams) {

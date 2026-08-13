@@ -2,7 +2,7 @@ import { describe, expect } from 'vite-plus/test';
 
 import * as v from 'valibot';
 
-import { getPostHandler, createPostHandler, echoHeadersHandler, echoQueryHandler } from '#mock/handlers/fetch';
+import { getPostHandler } from '#mock/handlers/fetch';
 import { defineContract, createFetchClient } from '#src/fetch';
 import { RequestValidationError, ResponseValidationError, UnexpectedStatusError } from '#src/fetch/errors';
 import { test } from '#test/browser-util';
@@ -50,8 +50,7 @@ describe('createFetchClient (browser)', () => {
   });
 
   // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
-  test('serializes query params onto the request URL', async ({ worker }) => {
-    worker.use(echoQueryHandler.success);
+  test('serializes query params onto the request URL', async () => {
     const client = createFetchClient(contract, { baseUrl: 'https://api.example.com' });
 
     const result = await client.echoQuery({ query: { tag: ['a', 'b'] } });
@@ -61,8 +60,7 @@ describe('createFetchClient (browser)', () => {
   });
 
   // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
-  test('merges client-level and route-level headers', async ({ worker }) => {
-    worker.use(echoHeadersHandler.success);
+  test('merges client-level and route-level headers', async () => {
     const client = createFetchClient(contract, {
       baseUrl: 'https://api.example.com',
       headers: { 'x-client-header': 'client-value' },
@@ -105,8 +103,7 @@ describe('createFetchClient (browser)', () => {
   });
 
   // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
-  test('sends a JSON body for POST requests', async ({ worker }) => {
-    worker.use(createPostHandler.success);
+  test('sends a JSON body for POST requests', async () => {
     const client = createFetchClient(contract, { baseUrl: 'https://api.example.com' });
 
     const result = await client.createPost({ body: { title: 'new post' } });

@@ -52,5 +52,7 @@ export const handlers = [
   getPostHandler.success,
   createPostHandler.success,
   echoHeadersHandler.success,
+  downloadHandler.success,
+  textHandler.success,
   echoQueryHandler.success,
 ];

@@ -2,14 +2,7 @@ import { describe, expect, vi } from 'vite-plus/test';
 
 import * as v from 'valibot';
 
-import {
-  getPostHandler,
-  createPostHandler,
-  echoHeadersHandler,
-  echoQueryHandler,
-  downloadHandler,
-  textHandler,
-} from '#mock/handlers/fetch';
+import { getPostHandler, downloadHandler } from '#mock/handlers/fetch';
 import { defineContract, createFetchClient } from '#src/fetch';
 import { validateAgainstStandardSchema, buildUrl } from '#src/fetch/client';
 import {
@@ -75,7 +68,6 @@ describe('createFetchClient', () => {
   // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
   test('substitutes path params into the request URL', async ({ server }) => {
     let capturedUrl: string | undefined;
-    server.use(getPostHandler.success);
     server.events.on('request:start', ({ request }) => {
       capturedUrl = request.url;
     });
@@ -88,8 +80,7 @@ describe('createFetchClient', () => {
   });
 
   // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
-  test('serializes query params onto the request URL', async ({ server }) => {
-    server.use(echoQueryHandler.success);
+  test('serializes query params onto the request URL', async () => {
     const client = createFetchClient(contract, { baseUrl: 'https://api.example.com' });
 
     const result = await client.echoQuery({ query: { tag: ['a', 'b'] } });
@@ -99,8 +90,7 @@ describe('createFetchClient', () => {
   });
 
   // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
-  test('merges client-level and route-level headers', async ({ server }) => {
-    server.use(echoHeadersHandler.success);
+  test('merges client-level and route-level headers', async () => {
     const client = createFetchClient(contract, {
       baseUrl: 'https://api.example.com',
       headers: { 'x-client-header': 'client-value' },
@@ -156,8 +146,7 @@ describe('createFetchClient', () => {
   });
 
   // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
-  test('sends a JSON body for POST requests', async ({ server }) => {
-    server.use(createPostHandler.success);
+  test('sends a JSON body for POST requests', async () => {
     const client = createFetchClient(contract, { baseUrl: 'https://api.example.com' });
 
     const result = await client.createPost({ body: { title: 'new post' } });
@@ -188,8 +177,7 @@ describe('global headers', () => {
   );
 
   // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
-  test('merges the global headers schema with a route that declares its own headers', async ({ server }) => {
-    server.use(echoHeadersHandler.success);
+  test('merges the global headers schema with a route that declares its own headers', async () => {
     const client = createFetchClient(globalHeadersContract, { baseUrl: 'https://api.example.com' });
 
     const result = await client.echoHeadersWithRouteSchema({
@@ -203,8 +191,7 @@ describe('global headers', () => {
   });
 
   // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
-  test('applies the global headers schema to a route with no headers schema of its own', async ({ server }) => {
-    server.use(echoHeadersHandler.success);
+  test('applies the global headers schema to a route with no headers schema of its own', async () => {
     const client = createFetchClient(globalHeadersContract, { baseUrl: 'https://api.example.com' });
 
     const result = await client.echoHeadersNoRouteSchema({ headers: { 'x-tenant': 'acme' } });
@@ -225,8 +212,7 @@ describe('per-call requestOptions', () => {
   });
 
   // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
-  test('requestOptions.headers overrides client and route-derived headers', async ({ server }) => {
-    server.use(echoHeadersHandler.success);
+  test('requestOptions.headers overrides client and route-derived headers', async () => {
     const client = createFetchClient(contractWithHeaders, {
       baseUrl: 'https://api.example.com',
       headers: { 'x-route-header': 'client-value' },
@@ -264,8 +250,7 @@ describe('blob responses', () => {
   });
 
   // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
-  test('returns the raw response body as a validated Blob', async ({ server }) => {
-    server.use(downloadHandler.success);
+  test('returns the raw response body as a validated Blob', async () => {
     const client = createFetchClient(blobContract, { baseUrl: 'https://api.example.com' });
 
     const result = await client.download({});
@@ -311,8 +296,7 @@ describe('text responses', () => {
   });
 
   // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
-  test('parses a text/* response body as a string', async ({ server }) => {
-    server.use(textHandler.success);
+  test('parses a text/* response body as a string', async () => {
     const client = createFetchClient(textContract, { baseUrl: 'https://api.example.com' });
 
     const result = await client.getText({});

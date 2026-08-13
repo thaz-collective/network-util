@@ -158,6 +158,42 @@ describe('createFetchClient', () => {
   });
 });
 
+describe('per-call requestOptions', () => {
+  beforeAll(() => {
+    server.listen({ onUnhandledRequest: 'error' });
+  });
+  afterEach(() => {
+    server.resetHandlers();
+  });
+  afterAll(() => {
+    server.close();
+  });
+
+  test('requestOptions.headers overrides client and route-derived headers', async () => {
+    server.use(echoHeadersHandler.success);
+    const client = createFetchClient(contract, {
+      baseUrl: 'https://api.example.com',
+      headers: { 'x-client-header': 'client-value' },
+    });
+
+    const result = await client.echoHeaders(
+      { headers: { 'x-route-header': 'route-value' } },
+      { headers: { 'x-client-header': 'override-value' } },
+    );
+
+    expect(result.body.headers['x-client-header']).toBe('override-value');
+    expect(result.body.headers['x-route-header']).toBe('route-value');
+  });
+
+  test('requestOptions.signal is forwarded to the underlying fetch call, aborting the request', async () => {
+    const client = createFetchClient(contract, { baseUrl: 'https://api.example.com' });
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(client.getPost({ pathParams: { id: '1' } }, { signal: controller.signal })).rejects.toThrow(/abort/i);
+  });
+});
+
 describe('global headers', () => {
   beforeAll(() => {
     server.listen({ onUnhandledRequest: 'error' });
@@ -346,6 +382,12 @@ describe('buildUrl', () => {
 
     expect(caught).toBeInstanceOf(MissingPathParamError);
     expect(caught).toMatchObject({ path: '/posts/:id', token: 'id' });
+  });
+
+  test('substitutes a hyphenated path token', () => {
+    expect(buildUrl('https://api.example.com', '/posts/:post-id', { 'post-id': 1 }, undefined)).toBe(
+      'https://api.example.com/posts/1',
+    );
   });
 
   test('encodes special characters in a path param value', () => {

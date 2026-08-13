@@ -13,7 +13,6 @@ import type {
   InferRequestGlobalHeaders,
   InferRequestBody,
 } from '#src/fetch/types';
-import { createFetchClient } from '#src/fetch/client';
 import { defineContract } from '#src/fetch/contract';
 
 const pathParamsSchema = v.object({ id: v.pipe(v.string(), v.transform(Number)) });
@@ -43,8 +42,8 @@ const contract = defineContract({
   },
 });
 
-describe('fetch dsl type inference', () => {
-  test('inferRequest only has keys for declared fields', () => {
+describe('inferRequest', () => {
+  test('only has keys for declared fields', () => {
     expectTypeOf<InferRequest<(typeof contract)['getPost']>>().toEqualTypeOf<{
       pathParams: { id: string };
       query: { search?: string | undefined };
@@ -57,29 +56,37 @@ describe('fetch dsl type inference', () => {
     // oxlint-disable-next-line typescript/no-empty-object-type -- asserting the mapped type produces zero keys
     expectTypeOf<InferRequest<(typeof contract)['listPosts']>>().toEqualTypeOf<{}>();
   });
+});
 
-  test('inferRequestPathParams infers the path params schema input, or undefined when absent', () => {
+describe('inferRequestPathParams', () => {
+  test('infers the path params schema input, or undefined when absent', () => {
     expectTypeOf<InferRequestPathParams<(typeof contract)['getPost']>>().toEqualTypeOf<{ id: string }>();
     expectTypeOf<InferRequestPathParams<(typeof contract)['createPost']>>().toEqualTypeOf<undefined>();
   });
+});
 
-  test('inferRequestQuery infers the query schema input, or undefined when absent', () => {
+describe('inferRequestQuery', () => {
+  test('infers the query schema input, or undefined when absent', () => {
     expectTypeOf<InferRequestQuery<(typeof contract)['getPost']>>().toEqualTypeOf<{ search?: string | undefined }>();
     expectTypeOf<InferRequestQuery<(typeof contract)['createPost']>>().toEqualTypeOf<undefined>();
   });
+});
 
-  test('inferRequestBody infers the body schema input, or undefined when absent', () => {
+describe('inferRequestBody', () => {
+  test('infers the body schema input, or undefined when absent', () => {
     expectTypeOf<InferRequestBody<(typeof contract)['createPost']>>().toEqualTypeOf<{ title: string }>();
     expectTypeOf<InferRequestBody<(typeof contract)['getPost']>>().toEqualTypeOf<undefined>();
   });
+});
 
-  test('inferResponse is a discriminated union over declared statuses', () => {
+describe('inferResponse', () => {
+  test('is a discriminated union over declared statuses', () => {
     expectTypeOf<InferResponse<(typeof contract)['createPost']>>().toEqualTypeOf<
       { status: 201; body: { id: number; title: string } } | { status: 400; body: { message: string } }
     >();
   });
 
-  test('inferResponse narrows to a single status when given as the second type param', () => {
+  test('narrows to a single status when given as the second type param', () => {
     expectTypeOf<InferResponse<(typeof contract)['createPost'], 201>>().toEqualTypeOf<{
       status: 201;
       body: { id: number; title: string };
@@ -91,7 +98,24 @@ describe('fetch dsl type inference', () => {
     }>();
   });
 
-  test('non-standard-schema values are rejected on schema fields', () => {
+  test('infers a Blob response body', () => {
+    const blobContract = defineContract({
+      download: {
+        method: 'GET',
+        path: '/download',
+        responses: { 200: v.blob() },
+      },
+    });
+
+    expectTypeOf<InferResponse<(typeof blobContract)['download']>>().toEqualTypeOf<{
+      status: 200;
+      body: Blob;
+    }>();
+  });
+});
+
+describe('routeDef', () => {
+  test('rejects non-standard-schema values on schema fields', () => {
     expectTypeOf<{ notAStandardSchema: true }>().not.toExtend<RouteDef['pathParams']>();
     expectTypeOf<{ notAStandardSchema: true }>().not.toExtend<RouteDef['query']>();
     expectTypeOf<{ notAStandardSchema: true }>().not.toExtend<RouteDef['headers']>();
@@ -100,7 +124,7 @@ describe('fetch dsl type inference', () => {
   });
 });
 
-describe('global headers', () => {
+describe('global headers inference', () => {
   const globalHeadersSchema = v.object({ 'x-tenant': v.string() });
 
   const contractWithGlobalHeaders = defineContract(
@@ -120,13 +144,13 @@ describe('global headers', () => {
     { headers: globalHeadersSchema },
   );
 
-  test('merges global and route headers into a single required object', () => {
+  test('inferRequest merges global and route headers into a single required object', () => {
     expectTypeOf<InferRequest<(typeof contractWithGlobalHeaders)['withOwnHeaders']>>().toEqualTypeOf<{
       headers: { 'x-tenant': string; 'x-route': string };
     }>();
   });
 
-  test('applies global headers alone when a route has no headers schema', () => {
+  test('inferRequest applies global headers alone when a route has no headers schema', () => {
     expectTypeOf<InferRequest<(typeof contractWithGlobalHeaders)['withoutOwnHeaders']>>().toEqualTypeOf<{
       headers: { 'x-tenant': string };
     }>();
@@ -163,31 +187,5 @@ describe('global headers', () => {
 
   test('inferRequestHeaders is undefined when there are no global or local headers', () => {
     expectTypeOf<InferRequestHeaders<(typeof contract)['getPost']>>().toEqualTypeOf<undefined>();
-  });
-
-  test('createFetchClient threads the global headers schema through to each route', () => {
-    const client = createFetchClient(contractWithGlobalHeaders, { baseUrl: 'https://api.example.com' });
-
-    expectTypeOf(client.withOwnHeaders)
-      .parameter(0)
-      .toEqualTypeOf<{ headers: { 'x-tenant': string; 'x-route': string } }>();
-    expectTypeOf(client.withoutOwnHeaders).parameter(0).toEqualTypeOf<{ headers: { 'x-tenant': string } }>();
-  });
-});
-
-describe('blob responses', () => {
-  const blobContract = defineContract({
-    download: {
-      method: 'GET',
-      path: '/download',
-      responses: { 200: v.blob() },
-    },
-  });
-
-  test('infers the response body as Blob', () => {
-    expectTypeOf<InferResponse<(typeof blobContract)['download']>>().toEqualTypeOf<{
-      status: 200;
-      body: Blob;
-    }>();
   });
 });

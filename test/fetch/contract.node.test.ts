@@ -95,6 +95,52 @@ describe('defineContract', () => {
     });
   });
 
+  test('accepts hyphenated path tokens paired with a matching pathParams schema', () => {
+    const routes = {
+      getComment: {
+        method: 'GET' as const,
+        path: '/posts/:post-id/comments/:comment-id',
+        pathParams: v.object({ 'post-id': v.string(), 'comment-id': v.string() }),
+        responses: { 200: v.object({ id: v.string() }) },
+      },
+    };
+
+    expect(defineContract(routes)).toBe(routes);
+  });
+
+  test('does not throw when responses is an empty object', () => {
+    const routes = {
+      noContent: {
+        method: 'DELETE' as const,
+        path: '/posts/:id',
+        pathParams: v.object({ id: v.string() }),
+        responses: {},
+      },
+    };
+
+    expect(defineContract(routes)).toBe(routes);
+  });
+
+  test('throws ContractResponseStatusError for the first of multiple invalid status keys', () => {
+    const routes = {
+      echo: {
+        method: 'POST' as const,
+        path: '/echo',
+        responses: { '200a': v.object({ id: v.string() }), '400b': v.object({ id: v.string() }) },
+      },
+    };
+
+    let caught: unknown;
+    try {
+      defineContract(routes);
+    } catch (error: unknown) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(ContractResponseStatusError);
+    expect(caught).toMatchObject({ status: '200a' });
+  });
+
   test('accepts an optional global headers schema without changing the returned routes reference', () => {
     const routes = {
       getPost: {

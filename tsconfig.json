@@ -1,13 +1,12 @@
 {
   "extends": [
     "@thaz/typescript-config/bundler.json",
-    "@thaz/typescript-config/lib-dom.json",
+    "@thaz/typescript-config/lib-dom-temporal.json",
     "@thaz/typescript-config/paths.json",
     "@thaz/typescript-config/react.json"
   ],
   "include": ["src", "test", "mock", "vite.config.ts"],
   "compilerOptions": {
-    "types": ["node", "react"],
-    "lib": ["es2023", "dom", "esnext.temporal", "esnext.intl", "esnext.date"]
+    "types": ["node", "react"]
   }
 }

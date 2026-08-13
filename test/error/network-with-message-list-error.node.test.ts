@@ -1,7 +1,6 @@
 import { describe, test, expect } from 'vite-plus/test';
 
-import { NetworkError } from '#src/error/network-error';
-import { NetworkWithMessageListError } from '#src/error/network-with-message-list-error';
+import { NetworkError, NetworkWithMessageListError } from '#src/error/errors';
 
 describe('networkWithMessageListError', () => {
   const messageList = [{ type: 'ERROR', code: 'E001', description: 'Something failed' }] as const;

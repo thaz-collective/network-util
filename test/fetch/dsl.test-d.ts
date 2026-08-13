@@ -2,9 +2,8 @@ import { describe, test, expectTypeOf } from 'vite-plus/test';
 
 import * as v from 'valibot';
 
-import type { RouteDef } from '#src/fetch/dsl';
-import type { InferRequest, InferResponse } from '#src/fetch/infer-types';
-import { defineContract } from '#src/fetch/dsl';
+import type { RouteDef, InferRequest, InferResponse } from '#src/fetch/types';
+import { defineContract } from '#src/fetch/contract';
 
 const pathParamsSchema = v.object({ id: v.pipe(v.string(), v.transform(Number)) });
 const querySchema = v.object({ search: v.optional(v.string()) });

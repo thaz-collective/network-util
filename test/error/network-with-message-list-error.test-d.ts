@@ -2,9 +2,9 @@ import { describe, test, expectTypeOf } from 'vite-plus/test';
 
 import type { InferOutput } from 'valibot';
 
-import type { NetworkWithMessageListErrorProps } from '#src/error/network-with-message-list-error';
+import type { NetworkWithMessageListErrorProps } from '#src/error/errors';
 import type { response } from '#src/valibot/response-message/response';
-import { NetworkWithMessageListError } from '#src/error/network-with-message-list-error';
+import { NetworkWithMessageListError } from '#src/error/errors';
 
 describe('networkWithMessageListError', () => {
   test('constructor accepts NetworkWithMessageListErrorProps', () => {

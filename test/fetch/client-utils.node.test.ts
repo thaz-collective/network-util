@@ -1,6 +1,27 @@
 import { describe, test, expect } from 'vite-plus/test';
 
-import { buildUrl } from '#src/fetch/url';
+import * as v from 'valibot';
+
+import { validateAgainstStandardSchema, buildUrl } from '#src/fetch/client';
+
+describe('validateAgainstStandardSchema', () => {
+  test('returns success with the parsed value for valid input', async () => {
+    const result = await validateAgainstStandardSchema(
+      v.pipe(
+        v.string(),
+        v.transform((s) => s.toUpperCase()),
+      ),
+      'hi',
+    );
+    expect(result).toStrictEqual({ success: true, value: 'HI' });
+  });
+
+  test('returns failure with issues for invalid input', async () => {
+    const result = await validateAgainstStandardSchema(v.string(), 123);
+    expect(result.success).toBeFalsy();
+    expect(result).toHaveProperty('issues');
+  });
+});
 
 describe('buildUrl', () => {
   test('substitutes a single path token', () => {

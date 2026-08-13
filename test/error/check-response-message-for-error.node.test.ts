@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vite-plus/test';
 
 import { checkResponseMessageForError } from '#src/error/check-response-message-for-error';
-import { NetworkWithMessageListError } from '#src/error/network-with-message-list-error';
+import { NetworkWithMessageListError } from '#src/error/errors';
 
 describe('checkResponseMessageForError', () => {
   test('throws NetworkWithMessageListError when an ERROR message is present and content-type is JSON', () => {

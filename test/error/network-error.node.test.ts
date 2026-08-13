@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vite-plus/test';
 
-import { NetworkError } from '#src/error/network-error';
+import { NetworkError } from '#src/error/errors';
 
 describe('networkError', () => {
   test('sets statusCode and name', () => {

@@ -1,7 +1,7 @@
 import { describe, test, expectTypeOf } from 'vite-plus/test';
 
-import type { NetworkErrorProps } from '#src/error/network-error';
-import { NetworkError } from '#src/error/network-error';
+import type { NetworkErrorProps } from '#src/error/errors';
+import { NetworkError } from '#src/error/errors';
 
 describe('networkError', () => {
   test('constructor accepts NetworkErrorProps', () => {

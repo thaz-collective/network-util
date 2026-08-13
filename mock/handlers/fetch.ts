@@ -48,6 +48,15 @@ export const echoQueryHandler = {
   }),
 };
 
+export const createItemHandler = {
+  success: http.post('https://api.example.com/items', () =>
+    HttpResponse.json({ id: 1, name: 'widget' }, { status: 200 }),
+  ),
+  businessError: http.post('https://api.example.com/items', () =>
+    HttpResponse.json({ code: 'DUPLICATE_ITEM', message: 'An item with this name already exists.' }, { status: 400 }),
+  ),
+};
+
 export const handlers = [
   getPostHandler.success,
   createPostHandler.success,
@@ -55,4 +64,5 @@ export const handlers = [
   downloadHandler.success,
   textHandler.success,
   echoQueryHandler.success,
+  createItemHandler.success,
 ];

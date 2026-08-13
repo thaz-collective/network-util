@@ -2,7 +2,7 @@ import { describe, expect, vi } from 'vite-plus/test';
 
 import * as v from 'valibot';
 
-import { getPostHandler, downloadHandler } from '#mock/handlers/fetch';
+import { getPostHandler, downloadHandler, createItemHandler } from '#mock/handlers/fetch';
 import { defineContract, createFetchClient } from '#src/fetch';
 import { validateAgainstStandardSchema, buildUrl } from '#src/fetch/client';
 import {
@@ -198,6 +198,45 @@ describe('global headers', () => {
 
     // oxlint-disable-next-line vitest/no-standalone-expect -- This fires because test is a fixture and not from `vitest`/`vite-plus/test`
     expect(result.body.headers['x-tenant']).toBe('acme');
+  });
+});
+
+describe('multiple response statuses', () => {
+  const itemContract = defineContract({
+    createItem: {
+      method: 'POST',
+      path: '/items',
+      body: v.object({ name: v.string() }),
+      responses: {
+        200: v.object({ id: v.number(), name: v.string() }),
+        400: v.object({ code: v.string(), message: v.string() }),
+      },
+    },
+  });
+
+  // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
+  test('validates the response against the schema for a 200 success status', async () => {
+    const client = createFetchClient(itemContract, { baseUrl: 'https://api.example.com' });
+
+    const result = await client.createItem({ body: { name: 'widget' } });
+
+    // oxlint-disable-next-line vitest/no-standalone-expect -- This fires because test is a fixture and not from `vitest`/`vite-plus/test`
+    expect(result.status).toBe(200);
+    // oxlint-disable-next-line vitest/no-standalone-expect -- This fires because test is a fixture and not from `vitest`/`vite-plus/test`
+    expect(result.body).toStrictEqual({ id: 1, name: 'widget' });
+  });
+
+  // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
+  test('validates the response against the schema for a 400 business-exception status', async ({ server }) => {
+    server.use(createItemHandler.businessError);
+    const client = createFetchClient(itemContract, { baseUrl: 'https://api.example.com' });
+
+    const result = await client.createItem({ body: { name: 'widget' } });
+
+    // oxlint-disable-next-line vitest/no-standalone-expect -- This fires because test is a fixture and not from `vitest`/`vite-plus/test`
+    expect(result.status).toBe(400);
+    // oxlint-disable-next-line vitest/no-standalone-expect -- This fires because test is a fixture and not from `vitest`/`vite-plus/test`
+    expect(result.body).toStrictEqual({ code: 'DUPLICATE_ITEM', message: 'An item with this name already exists.' });
   });
 });
 

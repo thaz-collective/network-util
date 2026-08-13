@@ -141,6 +141,22 @@ describe('defineContract', () => {
     expect(caught).toMatchObject({ status: '200a' });
   });
 
+  test('accepts a route with a 200 success status and a 400 business-exception status', () => {
+    const routes = {
+      createItem: {
+        method: 'POST' as const,
+        path: '/items',
+        body: v.object({ name: v.string() }),
+        responses: {
+          200: v.object({ id: v.number(), name: v.string() }),
+          400: v.object({ code: v.string(), message: v.string() }),
+        },
+      },
+    };
+
+    expect(defineContract(routes)).toBe(routes);
+  });
+
   test('accepts an optional global headers schema without changing the returned routes reference', () => {
     const routes = {
       getPost: {

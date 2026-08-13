@@ -2,7 +2,7 @@ import { describe, expect } from 'vite-plus/test';
 
 import * as v from 'valibot';
 
-import { getPostHandler } from '#mock/handlers/fetch';
+import { getPostHandler, createItemHandler } from '#mock/handlers/fetch';
 import { defineContract, createFetchClient } from '#src/fetch';
 import { RequestValidationError, ResponseValidationError, UnexpectedStatusError } from '#src/fetch/errors';
 import { test } from '#test/browser-util';
@@ -112,5 +112,44 @@ describe('createFetchClient (browser)', () => {
     expect(result.status).toBe(201);
     // oxlint-disable-next-line vitest/no-standalone-expect -- This fires because test is a fixture and not from `vitest`/`vite-plus/test`
     expect(result.body).toStrictEqual({ id: 1, title: 'created' });
+  });
+});
+
+describe('multiple response statuses (browser)', () => {
+  const itemContract = defineContract({
+    createItem: {
+      method: 'POST',
+      path: '/items',
+      body: v.object({ name: v.string() }),
+      responses: {
+        200: v.object({ id: v.number(), name: v.string() }),
+        400: v.object({ code: v.string(), message: v.string() }),
+      },
+    },
+  });
+
+  // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
+  test('validates the response against the schema for a 200 success status', async () => {
+    const client = createFetchClient(itemContract, { baseUrl: 'https://api.example.com' });
+
+    const result = await client.createItem({ body: { name: 'widget' } });
+
+    // oxlint-disable-next-line vitest/no-standalone-expect -- This fires because test is a fixture and not from `vitest`/`vite-plus/test`
+    expect(result.status).toBe(200);
+    // oxlint-disable-next-line vitest/no-standalone-expect -- This fires because test is a fixture and not from `vitest`/`vite-plus/test`
+    expect(result.body).toStrictEqual({ id: 1, name: 'widget' });
+  });
+
+  // oxlint-disable-next-line vitest/prefer-importing-vitest-globals -- this is from a test fixture and therefore not a global
+  test('validates the response against the schema for a 400 business-exception status', async ({ worker }) => {
+    worker.use(createItemHandler.businessError);
+    const client = createFetchClient(itemContract, { baseUrl: 'https://api.example.com' });
+
+    const result = await client.createItem({ body: { name: 'widget' } });
+
+    // oxlint-disable-next-line vitest/no-standalone-expect -- This fires because test is a fixture and not from `vitest`/`vite-plus/test`
+    expect(result.status).toBe(400);
+    // oxlint-disable-next-line vitest/no-standalone-expect -- This fires because test is a fixture and not from `vitest`/`vite-plus/test`
+    expect(result.body).toStrictEqual({ code: 'DUPLICATE_ITEM', message: 'An item with this name already exists.' });
   });
 });

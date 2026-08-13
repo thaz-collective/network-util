@@ -207,9 +207,9 @@ function stringifyQueryValue(value: unknown): string {
 }
 
 async function parseResponseBody(res: Response, contentType: string): Promise<unknown> {
-  if (contentType.includes('json')) {
+  if (contentType.includes('application/') && contentType.includes('json')) {
     return await res.json();
-  } else if (contentType.startsWith('text/')) {
+  } else if (contentType.includes('text/')) {
     return await res.text();
   }
 

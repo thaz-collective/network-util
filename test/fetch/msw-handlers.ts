@@ -31,6 +31,14 @@ export const downloadHandler = {
     }),
   ),
   invalidBody: http.get('https://api.example.com/download', () => HttpResponse.json({ notA: 'blob' })),
+  noContentType: http.get(
+    'https://api.example.com/download',
+    () => new HttpResponse(new TextEncoder().encode('binary-content').buffer),
+  ),
+};
+
+export const textHandler = {
+  success: http.get('https://api.example.com/text', () => HttpResponse.text('plain-text-content')),
 };
 
 export const echoQueryHandler = {

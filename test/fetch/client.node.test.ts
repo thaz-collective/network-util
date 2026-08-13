@@ -18,6 +18,7 @@ import {
   echoHeadersHandler,
   echoQueryHandler,
   downloadHandler,
+  textHandler,
 } from './msw-handlers';
 import { server } from './msw-server.node';
 
@@ -112,6 +113,18 @@ describe('createFetchClient', () => {
 
     expect(result.body.headers['x-client-header']).toBe('client-value');
     expect(result.body.headers['x-route-header']).toBe('route-value');
+  });
+
+  test('accepts a thunk for client-level headers', async () => {
+    server.use(echoHeadersHandler.success);
+    const client = createFetchClient(contract, {
+      baseUrl: 'https://api.example.com',
+      headers: () => ({ 'x-client-header': 'client-value' }),
+    });
+
+    const result = await client.echoHeaders({ headers: { 'x-route-header': 'route-value' } });
+
+    expect(result.body.headers['x-client-header']).toBe('client-value');
   });
 
   test('throws RequestValidationError and never calls fetch for invalid request data', async () => {
@@ -242,6 +255,45 @@ describe('blob responses', () => {
     const client = createFetchClient(blobContract, { baseUrl: 'https://api.example.com' });
 
     await expect(client.download({})).rejects.toBeInstanceOf(ResponseValidationError);
+  });
+
+  test('falls back to Blob parsing when the response has no content-type header', async () => {
+    server.use(downloadHandler.noContentType);
+    const client = createFetchClient(blobContract, { baseUrl: 'https://api.example.com' });
+
+    const result = await client.download({});
+
+    expect(result.body).toBeInstanceOf(Blob);
+    await expect(result.body.text()).resolves.toBe('binary-content');
+  });
+});
+
+describe('text responses', () => {
+  beforeAll(() => {
+    server.listen({ onUnhandledRequest: 'error' });
+  });
+  afterEach(() => {
+    server.resetHandlers();
+  });
+  afterAll(() => {
+    server.close();
+  });
+
+  const textContract = defineContract({
+    getText: {
+      method: 'GET',
+      path: '/text',
+      responses: { 200: v.string() },
+    },
+  });
+
+  test('parses a text/* response body as a string', async () => {
+    server.use(textHandler.success);
+    const client = createFetchClient(textContract, { baseUrl: 'https://api.example.com' });
+
+    const result = await client.getText({});
+
+    expect(result.body).toBe('plain-text-content');
   });
 });
 

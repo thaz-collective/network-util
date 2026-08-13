@@ -1,17 +1,13 @@
-import type { RouteDef } from './dsl';
-import type { InferRequest, InferResponse } from './infer-types';
+import type { StandardSchemaV1 } from './standard-schema';
+import type { InferRequest, InferResponse, RouteDef, RequestField } from './types';
 import { RequestValidationError, ResponseValidationError, UnexpectedStatusError } from './errors';
-import { validateAgainstStandardSchema } from './standard-schema-utils';
-import { buildUrl } from './url';
 
 export interface CreateFetchClientOptions {
   baseUrl: string;
   headers?: HeadersInit | (() => HeadersInit);
 }
 
-type RequestField = 'pathParams' | 'query' | 'headers' | 'body';
-
-type FetchClient<T extends Record<string, RouteDef>> = {
+export type FetchClient<T extends Record<string, RouteDef>> = {
   [K in keyof T]: (args: InferRequest<T[K]>) => Promise<InferResponse<T[K]>>;
 };
 
@@ -31,10 +27,16 @@ export function createFetchClient<T extends Record<string, RouteDef>>(
 
   function createRouteFn(route: RouteDef) {
     return async (args: Partial<Record<RequestField, unknown>>) => {
-      const pathParams = await validateOptionalField(route, 'pathParams', args.pathParams);
-      const query = await validateOptionalField(route, 'query', args.query);
-      const headers = await validateOptionalField(route, 'headers', args.headers);
-      const body = await validateOptionalField(route, 'body', args.body);
+      const request: RequestInit = { method: route.method };
+      const requestHeaders = initializeHeaders(options.headers);
+
+      const pathParams = await validateOptionalRequestField(route, 'pathParams', args.pathParams);
+      // TODO: ensure that pathParams matches Record<string, unknown> type or undefined
+      const query = await validateOptionalRequestField(route, 'query', args.query);
+      // TODO: ensure that query matches Record<string, unknown> type or undefined
+      const headers = await validateOptionalRequestField(route, 'headers', args.headers);
+      // TODO: ensure that headers matches Record<string, unknown> type or undefined
+      const body = await validateOptionalRequestField(route, 'body', args.body);
 
       const url = buildUrl(
         options.baseUrl,
@@ -45,73 +47,139 @@ export function createFetchClient<T extends Record<string, RouteDef>>(
         query as Record<string, unknown> | undefined,
       );
 
-      const mergedHeaders = buildHeaders(options.headers);
       if (headers) {
         for (const [headerKey, value] of Object.entries(headers)) {
-          mergedHeaders.set(headerKey, String(value));
+          requestHeaders.set(headerKey, String(value));
         }
       }
 
-      const init: RequestInit = { method: route.method, headers: mergedHeaders };
       if (body !== undefined && route.method !== 'GET' && route.method !== 'HEAD') {
-        mergedHeaders.set('content-type', 'application/json');
-        init.body = JSON.stringify(body);
+        requestHeaders.set('content-type', 'application/json');
+        request.body = JSON.stringify(body);
       }
 
-      const res = await fetch(url, init);
+      request.headers = requestHeaders;
+
+      const res = await fetch(url, request);
 
       const contentType = res.headers.get('content-type') ?? '';
       const parsedBody = await parseResponseBody(res, contentType);
 
       const responseSchema = route.responses[res.status];
-      if (!responseSchema) {
-        throw new UnexpectedStatusError({
-          method: route.method,
-          path: route.path,
-          status: res.status,
-          body: parsedBody,
-        });
+      if (responseSchema) {
+        const result = await validateAgainstStandardSchema(responseSchema, parsedBody);
+        if (!result.success) {
+          throw new ResponseValidationError({
+            issues: result.issues,
+            method: route.method,
+            path: route.path,
+            status: res.status,
+          });
+        }
+
+        return { status: res.status, body: result.value };
       }
 
-      const result = await validateAgainstStandardSchema(responseSchema, parsedBody);
-      if (!result.success) {
-        throw new ResponseValidationError(result.issues, {
-          method: route.method,
-          path: route.path,
-          status: res.status,
-        });
-      }
-
-      return { status: res.status, body: result.value };
+      throw new UnexpectedStatusError({
+        method: route.method,
+        path: route.path,
+        status: res.status,
+      });
     };
   }
 }
 
-function buildHeaders(optionsHeaders: CreateFetchClientOptions['headers']): Headers {
+function initializeHeaders(optionsHeaders: CreateFetchClientOptions['headers']) {
   if (typeof optionsHeaders === 'function') {
     return new Headers(optionsHeaders());
   }
+
   return new Headers(optionsHeaders);
+}
+
+export async function validateAgainstStandardSchema<T extends StandardSchemaV1>(
+  schema: T,
+  data: unknown,
+): Promise<
+  | { success: true; value: StandardSchemaV1.InferOutput<T> }
+  | { success: false; issues: readonly StandardSchemaV1.Issue[] }
+> {
+  const result = await schema['~standard'].validate(data);
+  if (result.issues) {
+    return { success: false, issues: result.issues };
+  }
+
+  return { success: true, value: result.value };
+}
+
+export async function validateOptionalRequestField(route: RouteDef, field: RequestField, value: unknown) {
+  const schema = route[field];
+  if (!schema) {
+    return undefined;
+  }
+
+  const result = await validateAgainstStandardSchema(schema, value);
+  if (result.success) {
+    return result.value;
+  }
+
+  throw new RequestValidationError({
+    issues: result.issues,
+    method: route.method,
+    path: route.path,
+    requestField: field,
+  });
+}
+
+export function buildUrl(
+  baseUrl: string,
+  path: string,
+  pathParams: Record<string, unknown> | undefined,
+  query: Record<string, unknown> | undefined,
+): string {
+  const substitutedPath = path.replaceAll(/:(?<token>[^/?]+)/g, (_match, token: string) => {
+    if (!pathParams || !(token in pathParams)) {
+      // TODO: Add specialized Error for this.
+      throw new Error(`Missing path param "${token}" for path "${path}"`);
+    }
+
+    return encodeURIComponent(String(pathParams[token]));
+  });
+
+  const url = new URL(substitutedPath, baseUrl);
+
+  if (query) {
+    for (const [key, value] of Object.entries(query)) {
+      if (value === undefined) {
+        continue;
+      }
+
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          url.searchParams.append(key, stringifyQueryValue(item));
+        }
+      } else {
+        url.searchParams.append(key, stringifyQueryValue(value));
+      }
+    }
+  }
+
+  return url.toString();
+}
+
+function stringifyQueryValue(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return JSON.stringify(value);
 }
 
 async function parseResponseBody(res: Response, contentType: string): Promise<unknown> {
   if (contentType.includes('json')) {
     return await res.json();
-  }
-  if (contentType.startsWith('text/')) {
+  } else if (contentType.startsWith('text/')) {
     return await res.text();
   }
-  return await res.blob();
-}
 
-async function validateOptionalField(route: RouteDef, field: RequestField, value: unknown) {
-  const schema = route[field];
-  if (!schema) {
-    return undefined;
-  }
-  const result = await validateAgainstStandardSchema(schema, value);
-  if (!result.success) {
-    throw new RequestValidationError(result.issues, { method: route.method, path: route.path, field });
-  }
-  return result.value;
+  return await res.blob();
 }

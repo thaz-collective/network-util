@@ -1,6 +1,24 @@
-import type { StandardSchemaV1 } from '#src/standard-schema';
+import type { StandardSchemaV1 } from '#src/fetch/standard-schema';
 
-import type { RouteDef } from './dsl';
+export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
+
+export type RequestField = 'pathParams' | 'query' | 'headers' | 'body';
+
+export interface RouteDef<
+  TPathParams extends StandardSchemaV1 | undefined = StandardSchemaV1 | undefined,
+  TQuery extends StandardSchemaV1 | undefined = StandardSchemaV1 | undefined,
+  THeaders extends StandardSchemaV1 | undefined = StandardSchemaV1 | undefined,
+  TBody extends StandardSchemaV1 | undefined = StandardSchemaV1 | undefined,
+  TResponses extends Record<number, StandardSchemaV1> = Record<number, StandardSchemaV1>,
+> {
+  method: Method;
+  path: string;
+  pathParams?: TPathParams;
+  query?: TQuery;
+  headers?: THeaders;
+  body?: TBody;
+  responses: TResponses;
+}
 
 export type InferPathParams<T extends RouteDef> = T['pathParams'] extends StandardSchemaV1
   ? StandardSchemaV1.InferInput<T['pathParams']>

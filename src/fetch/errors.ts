@@ -1,62 +1,129 @@
-import type { StandardSchemaV1 } from '#src/standard-schema';
-import { NetworkStandardSchemaValidationError } from '#src/error/network-standard-schema-validation-error';
+import type { StandardSchemaV1 } from './standard-schema';
+import type { Method, RequestField } from './types';
 
-import type { Method } from './dsl';
+export interface StandardSchemaValidationErrorProps {
+  readonly issues: readonly StandardSchemaV1.Issue[];
+}
 
 /**
- * Thrown when a request's path params, query, headers, or body fail standard-schema validation
- * before the request is sent.
+ * Thrown when data fails standard-schema validation.
  */
-export class RequestValidationError extends NetworkStandardSchemaValidationError {
+export class StandardSchemaValidationError extends Error implements StandardSchemaValidationErrorProps {
+  readonly issues: readonly StandardSchemaV1.Issue[];
+
+  constructor(props: StandardSchemaValidationErrorProps) {
+    super();
+    this.name = 'StandardSchemaValidationError';
+    this.issues = props.issues;
+  }
+
+  /**
+   * Returns `true` if `error` is a `StandardSchemaValidationError` instance.
+   *
+   * @param error The value to test.
+   * @returns A type predicate narrowing `error` to `StandardSchemaValidationError`.
+   */
+  public static isStandardSchemaValidationError(error: unknown): error is StandardSchemaValidationError {
+    return error instanceof StandardSchemaValidationError;
+  }
+}
+
+export interface BaseValidationErrorProps {
   readonly method: Method;
   readonly path: string;
-  readonly field: 'pathParams' | 'query' | 'headers' | 'body';
+}
 
-  constructor(
-    issues: readonly StandardSchemaV1.Issue[],
-    context: { method: Method; path: string; field: 'pathParams' | 'query' | 'headers' | 'body' },
-  ) {
-    super(issues);
+export interface RequestValidationErrorProps extends BaseValidationErrorProps {
+  readonly requestField: RequestField;
+}
+
+/**
+ * Thrown when a request's path params, query params, headers, or request body
+ * fails standard-schema validation before the request is sent.
+ */
+export class RequestValidationError extends StandardSchemaValidationError implements BaseValidationErrorProps {
+  readonly method: Method;
+  readonly path: string;
+  readonly requestField: RequestField;
+
+  constructor(props: RequestValidationErrorProps & StandardSchemaValidationErrorProps) {
+    super(props);
     this.name = 'RequestValidationError';
-    this.method = context.method;
-    this.path = context.path;
-    this.field = context.field;
+    this.method = props.method;
+    this.path = props.path;
+    this.requestField = props.requestField;
   }
+
+  /**
+   * Returns `true` if `error` is a `RequestValidationError` instance.
+   *
+   * @param error The value to test.
+   * @returns A type predicate narrowing `error` to `RequestValidationError`.
+   */
+  public static isRequestValidationError(error: unknown): error is RequestValidationError {
+    return error instanceof RequestValidationError;
+  }
+}
+
+export interface ResponseValidationErrorProps extends BaseValidationErrorProps {
+  readonly status: number;
 }
 
 /**
  * Thrown when a response body fails standard-schema validation against the schema declared for
  * its status code.
  */
-export class ResponseValidationError extends NetworkStandardSchemaValidationError {
+export class ResponseValidationError extends StandardSchemaValidationError implements ResponseValidationErrorProps {
   readonly method: Method;
   readonly path: string;
   readonly status: number;
 
-  constructor(issues: readonly StandardSchemaV1.Issue[], context: { method: Method; path: string; status: number }) {
-    super(issues);
+  constructor(props: ResponseValidationErrorProps & StandardSchemaValidationErrorProps) {
+    super(props);
     this.name = 'ResponseValidationError';
-    this.method = context.method;
-    this.path = context.path;
-    this.status = context.status;
+    this.method = props.method;
+    this.path = props.path;
+    this.status = props.status;
   }
+
+  /**
+   * Returns `true` if `error` is a `ResponseValidationError` instance.
+   *
+   * @param error The value to test.
+   * @returns A type predicate narrowing `error` to `ResponseValidationError`.
+   */
+  public static isResponseValidationError(error: unknown): error is ResponseValidationError {
+    return error instanceof ResponseValidationError;
+  }
+}
+
+export interface UnexpectedStatusErrorProps extends BaseValidationErrorProps {
+  readonly status: number;
 }
 
 /**
  * Thrown when a response's status code has no matching entry in the contract's `responses` map.
  */
-export class UnexpectedStatusError extends Error {
+export class UnexpectedStatusError extends Error implements UnexpectedStatusErrorProps {
   readonly method: Method;
   readonly path: string;
   readonly status: number;
-  readonly body: unknown;
 
-  constructor(context: { method: Method; path: string; status: number; body: unknown }) {
-    super(`Unexpected status ${context.status} for ${context.method} ${context.path}`);
+  constructor(props: UnexpectedStatusErrorProps) {
+    super();
     this.name = 'UnexpectedStatusError';
-    this.method = context.method;
-    this.path = context.path;
-    this.status = context.status;
-    this.body = context.body;
+    this.method = props.method;
+    this.path = props.path;
+    this.status = props.status;
+  }
+
+  /**
+   * Returns `true` if `error` is a `UnexpectedStatusError` instance.
+   *
+   * @param error The value to test.
+   * @returns A type predicate narrowing `error` to `UnexpectedStatusError`.
+   */
+  public static isUnexpectedStatusError(error: unknown): error is UnexpectedStatusError {
+    return error instanceof UnexpectedStatusError;
   }
 }

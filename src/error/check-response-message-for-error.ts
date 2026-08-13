@@ -2,7 +2,7 @@ import * as v from 'valibot';
 
 import { response } from '#src/valibot/response-message/response';
 
-import { NetworkWithMessageListError } from './network-with-message-list-error';
+import { NetworkWithMessageListError } from './errors';
 
 /**
  * Guards against server-returned ERROR messages embedded in an otherwise successful response.

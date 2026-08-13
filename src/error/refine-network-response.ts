@@ -2,8 +2,7 @@ import * as v from 'valibot';
 
 import { response } from '#src/valibot/response-message/response';
 
-import { NetworkError } from './network-error';
-import { NetworkWithMessageListError } from './network-with-message-list-error';
+import { NetworkWithMessageListError, NetworkError } from './errors';
 
 /**
  * Asserts that `statusCode` equals `successCode`, throwing the appropriate error type if not.

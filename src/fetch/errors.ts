@@ -131,6 +131,38 @@ export class ContractPathParamsError extends Error implements ContractPathParams
   }
 }
 
+export interface ContractResponseStatusErrorProps extends BaseValidationErrorProps {
+  readonly status: string;
+}
+
+/**
+ * Thrown by `defineContract` when a route's `responses` map has a key that isn't a valid numeric
+ * status code (e.g. `'200'` written as a non-numeric-looking string, or containing whitespace).
+ */
+export class ContractResponseStatusError extends Error implements ContractResponseStatusErrorProps {
+  readonly method: Method;
+  readonly path: string;
+  readonly status: string;
+
+  constructor(props: ContractResponseStatusErrorProps) {
+    super(`Route "${props.method} ${props.path}" declares a non-numeric response status "${props.status}".`);
+    this.name = 'ContractResponseStatusError';
+    this.method = props.method;
+    this.path = props.path;
+    this.status = props.status;
+  }
+
+  /**
+   * Returns `true` if `error` is a `ContractResponseStatusError` instance.
+   *
+   * @param error The value to test.
+   * @returns A type predicate narrowing `error` to `ContractResponseStatusError`.
+   */
+  public static isContractResponseStatusError(error: unknown): error is ContractResponseStatusError {
+    return error instanceof ContractResponseStatusError;
+  }
+}
+
 export interface MissingPathParamErrorProps {
   readonly path: string;
   readonly token: string;

@@ -1,6 +1,6 @@
 import type { StandardSchemaV1 } from './standard-schema';
 import type { RouteDef, Contract } from './types';
-import { ContractPathParamsError } from './errors';
+import { ContractPathParamsError, ContractResponseStatusError } from './errors';
 import { contractHeadersSymbol } from './types';
 
 export interface DefineContractOptions<G extends StandardSchemaV1 | undefined = undefined> {
@@ -9,9 +9,10 @@ export interface DefineContractOptions<G extends StandardSchemaV1 | undefined = 
 }
 
 /**
- * Anchors type inference over a flat map of routes. Also performs a runtime, authoring-time
- * sanity check that any `:token` in a route's `path` has a corresponding `pathParams` schema
- * declared — this is a best-effort guard, not a type-level guarantee.
+ * Anchors type inference over a flat map of routes. Also performs runtime, authoring-time sanity
+ * checks — that any `:token` in a route's `path` has a corresponding `pathParams` schema declared,
+ * and that every key in a route's `responses` map is a numeric status code — since TypeScript's
+ * `number` index signature can't reject non-numeric string keys like `'200a'` at the type level.
  *
  * An optional `headers` schema in `options` is merged into every route's inferred and validated
  * headers, without changing the shape or identity of the returned routes object.
@@ -28,6 +29,12 @@ export function defineContract<T extends Record<string, RouteDef>, G extends Sta
         path: route.path,
         tokens: tokens.map((token) => token.slice(1)),
       });
+    }
+
+    for (const status of Object.keys(route.responses)) {
+      if (!/^\d+$/.test(status)) {
+        throw new ContractResponseStatusError({ method: route.method, path: route.path, status });
+      }
     }
   }
 

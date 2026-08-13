@@ -6,6 +6,7 @@ import {
   ResponseValidationError,
   UnexpectedStatusError,
   ContractPathParamsError,
+  ContractResponseStatusError,
   MissingPathParamError,
   InvalidRequestFieldTypeError,
 } from '#src/fetch/errors';
@@ -122,6 +123,27 @@ describe('contractPathParamsError', () => {
     const error = new ContractPathParamsError({ method: 'GET', path: '/posts/:id', tokens: ['id'] });
     expect(ContractPathParamsError.isContractPathParamsError(error)).toBeTruthy();
     expect(ContractPathParamsError.isContractPathParamsError(new Error('nope'))).toBeFalsy();
+  });
+});
+
+describe('contractResponseStatusError', () => {
+  test('sets name and extends Error', () => {
+    const error = new ContractResponseStatusError({ method: 'POST', path: '/echo', status: '200a' });
+    expect(error.name).toBe('ContractResponseStatusError');
+    expect(error).toBeInstanceOf(Error);
+  });
+
+  test('carries context fields', () => {
+    const error = new ContractResponseStatusError({ method: 'POST', path: '/echo', status: '200a' });
+    expect(error.method).toBe('POST');
+    expect(error.path).toBe('/echo');
+    expect(error.status).toBe('200a');
+  });
+
+  test('isContractResponseStatusError returns true for a real instance and false otherwise', () => {
+    const error = new ContractResponseStatusError({ method: 'POST', path: '/echo', status: '200a' });
+    expect(ContractResponseStatusError.isContractResponseStatusError(error)).toBeTruthy();
+    expect(ContractResponseStatusError.isContractResponseStatusError(new Error('nope'))).toBeFalsy();
   });
 });
 

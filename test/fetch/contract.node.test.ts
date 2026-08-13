@@ -3,7 +3,7 @@ import { describe, test, expect } from 'vite-plus/test';
 import * as v from 'valibot';
 
 import { defineContract } from '#src/fetch/contract';
-import { ContractPathParamsError } from '#src/fetch/errors';
+import { ContractPathParamsError, ContractResponseStatusError } from '#src/fetch/errors';
 
 describe('defineContract', () => {
   test('returns the routes unchanged when path tokens have a matching pathParams schema', () => {
@@ -57,6 +57,42 @@ describe('defineContract', () => {
 
   test('isContractPathParamsError returns false for a plain Error', () => {
     expect(ContractPathParamsError.isContractPathParamsError(new Error('nope'))).toBeFalsy();
+  });
+
+  test('throws ContractResponseStatusError when a responses key is not a numeric status code', () => {
+    const routes = {
+      echo: {
+        method: 'POST' as const,
+        path: '/echo',
+        responses: { '200a': v.object({ id: v.string() }) },
+      },
+    };
+
+    expect(() => defineContract(routes)).toThrow(ContractResponseStatusError);
+  });
+
+  test('contractResponseStatusError carries the route context and offending status', () => {
+    const routes = {
+      echo: {
+        method: 'POST' as const,
+        path: '/echo',
+        responses: { '200a': v.object({ id: v.string() }) },
+      },
+    };
+
+    let caught: unknown;
+    try {
+      defineContract(routes);
+    } catch (error: unknown) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(ContractResponseStatusError);
+    expect(caught).toMatchObject({
+      method: 'POST',
+      path: '/echo',
+      status: '200a',
+    });
   });
 
   test('accepts an optional global headers schema without changing the returned routes reference', () => {

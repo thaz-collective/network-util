@@ -52,6 +52,7 @@
     "tag": "latest"
   },
   "scripts": {
+    "msw:setup": "vpx msw init ./public --save",
     "playwright:setup": "vpx playwright install chromium chromium-headless-shell firefox",
     "prepack": "vp run build",
     "taze": "vpx taze@latest -Ilwr --maturity-period 3",

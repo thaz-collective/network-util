@@ -1,9 +1,9 @@
 allowBuilds:
-  msw: set this to true or false
+  msw: false
+
 blockExoticSubdeps: true
 
 catalog:
-  '@standard-schema/spec': 1.0.0
   '@tanstack/react-query': 5.101.4
   '@thaz/oxfmt-config': 1.0.0-rc.3
   '@thaz/oxlint-config': 1.0.0-rc.2

@@ -116,3 +116,20 @@ describe('global headers', () => {
     expectTypeOf(client.withoutOwnHeaders).parameter(0).toEqualTypeOf<{ headers: { 'x-tenant': string } }>();
   });
 });
+
+describe('blob responses', () => {
+  const blobContract = defineContract({
+    download: {
+      method: 'GET',
+      path: '/download',
+      responses: { 200: v.blob() },
+    },
+  });
+
+  test('infers the response body as Blob', () => {
+    expectTypeOf<InferResponse<(typeof blobContract)['download']>>().toEqualTypeOf<{
+      status: 200;
+      body: Blob;
+    }>();
+  });
+});

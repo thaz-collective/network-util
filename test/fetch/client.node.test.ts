@@ -12,7 +12,13 @@ import {
   MissingPathParamError,
 } from '#src/fetch/errors';
 
-import { getPostHandler, createPostHandler, echoHeadersHandler, echoQueryHandler } from './msw-handlers';
+import {
+  getPostHandler,
+  createPostHandler,
+  echoHeadersHandler,
+  echoQueryHandler,
+  downloadHandler,
+} from './msw-handlers';
 import { server } from './msw-server.node';
 
 const postSchema = v.object({ id: v.number(), title: v.string() });
@@ -198,6 +204,44 @@ describe('global headers', () => {
     const result = await client.echoHeadersNoRouteSchema({ headers: { 'x-tenant': 'acme' } });
 
     expect(result.body.headers['x-tenant']).toBe('acme');
+  });
+});
+
+describe('blob responses', () => {
+  beforeAll(() => {
+    server.listen({ onUnhandledRequest: 'error' });
+  });
+  afterEach(() => {
+    server.resetHandlers();
+  });
+  afterAll(() => {
+    server.close();
+  });
+
+  const blobContract = defineContract({
+    download: {
+      method: 'GET',
+      path: '/download',
+      responses: { 200: v.blob() },
+    },
+  });
+
+  test('returns the raw response body as a validated Blob', async () => {
+    server.use(downloadHandler.success);
+    const client = createFetchClient(blobContract, { baseUrl: 'https://api.example.com' });
+
+    const result = await client.download({});
+
+    expect(result.status).toBe(200);
+    expect(result.body).toBeInstanceOf(Blob);
+    await expect(result.body.text()).resolves.toBe('binary-content');
+  });
+
+  test('throws ResponseValidationError when the response body is not a Blob', async () => {
+    server.use(downloadHandler.invalidBody);
+    const client = createFetchClient(blobContract, { baseUrl: 'https://api.example.com' });
+
+    await expect(client.download({})).rejects.toBeInstanceOf(ResponseValidationError);
   });
 });
 

@@ -24,6 +24,15 @@ export const echoHeadersHandler = {
   ),
 };
 
+export const downloadHandler = {
+  success: http.get('https://api.example.com/download', () =>
+    HttpResponse.arrayBuffer(new TextEncoder().encode('binary-content').buffer, {
+      headers: { 'content-type': 'application/octet-stream' },
+    }),
+  ),
+  invalidBody: http.get('https://api.example.com/download', () => HttpResponse.json({ notA: 'blob' })),
+};
+
 export const echoQueryHandler = {
   success: http.get('https://api.example.com/echo-query', ({ request }) => {
     const url = new URL(request.url);

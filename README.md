@@ -76,7 +76,7 @@ const schema = v.object({
 ```
 
 | Schema               | Accepts/transforms             | Output      |
-|----------------------|--------------------------------|-------------|
+| -------------------- | ------------------------------ | ----------- |
 | `n.array(schema)`    | `T[]`, `null`, `undefined`     | `T[]`       |
 | `n.boolean(default)` | `boolean`, `null`, `undefined` | `boolean`   |
 | `n.nullish(schema)`  | `T`, `null`, `undefined`, `{}` | `T \| null` |
@@ -95,7 +95,7 @@ v.parse(n.plainDate, Temporal.PlainDate.from('2024-06-15')); // -> Temporal.Plai
 ```
 
 | Schema             | Accepts                                     | Output                    |
-|--------------------|---------------------------------------------|---------------------------|
+| ------------------ | ------------------------------------------- | ------------------------- |
 | `n.zonedDateTime`  | `Temporal.ZonedDateTime` / ISO-8601 string  | `Temporal.ZonedDateTime`  |
 | `n.instant`        | `Temporal.Instant` / ISO-8601 string        | `Temporal.Instant`        |
 | `n.plainDateTime`  | `Temporal.PlainDateTime` / ISO-8601 string  | `Temporal.PlainDateTime`  |
@@ -120,7 +120,7 @@ const userSchema = v.object({
 ```
 
 | Schema                  | Fields                                                                                                       |
-|-------------------------|--------------------------------------------------------------------------------------------------------------|
+| ----------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `n.baseEntity`          | `created_at_timestamp`, `created_by`, `updated_at_timestamp`, `updated_by`                                   |
 | `n.activeEntity`        | `active_at_timestamp` (required `instant`), `expired_at_timestamp` (nullish `instant`)                       |
 | `n.extendedAuditEntity` | `created_by_process`, `created_by_user_id`, `updated_by_process`, `updated_by_user_id` (all nullish strings) |
@@ -238,13 +238,19 @@ route, merged with each route's own `headers` schema — see `DefineContractOpti
 | `InferRequestLocalHeaders`  | Infers a route's own `headers` schema input alone                                                                 |
 | `InferRequestGlobalHeaders` | Infers the contract-level global headers schema input a route was tagged with                                     |
 
-`defineContract` throws `ContractPathParamsError` if a route's `path` declares a `:token` with no
-matching `pathParams` schema, and `ContractResponseStatusError` if a `responses` key isn't a numeric
-status code. `createFetchClient`'s route functions throw `RequestValidationError` or
-`ResponseValidationError` on schema failure, `UnexpectedStatusError` for an undeclared status code,
-`MissingPathParamError` for an unfilled path token, and `InvalidRequestFieldTypeError` if a schema
-validates but doesn't produce a plain object. All of these (plus their common base,
-`StandardSchemaValidationError`) are also re-exported from `@thaz/network-util/error`.
+All error classes below (plus their common base, `StandardSchemaValidationError`) are also
+re-exported from `@thaz/network-util/error`.
+
+| Error                           | Thrown when                                                                                        |
+| ------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `StandardSchemaValidationError` | Common base class of `RequestValidationError` and `ResponseValidationError`                        |
+| `ContractPathParamsError`       | `defineContract`: a route's `path` declares a `:token` with no matching `pathParams` schema        |
+| `ContractResponseStatusError`   | `defineContract`: a `responses` key isn't a numeric status code                                    |
+| `MissingPathParamError`         | Building the URL: a route path token has no matching key (or an `undefined` value) in `pathParams` |
+| `InvalidRequestFieldTypeError`  | A schema validates successfully but produces a value that isn't a plain object                     |
+| `RequestValidationError`        | A route function's `pathParams`, `query`, `headers`, or `body` fails its schema                    |
+| `ResponseValidationError`       | A response body fails the schema declared for its status code                                      |
+| `UnexpectedStatusError`         | A response's status code has no matching entry in the route's `responses`                          |
 
 ---
 

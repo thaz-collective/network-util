@@ -115,18 +115,6 @@ describe('createFetchClient', () => {
     expect(result.body.headers['x-route-header']).toBe('route-value');
   });
 
-  test('accepts a thunk for client-level headers', async () => {
-    server.use(echoHeadersHandler.success);
-    const client = createFetchClient(contract, {
-      baseUrl: 'https://api.example.com',
-      headers: () => ({ 'x-client-header': 'client-value' }),
-    });
-
-    const result = await client.echoHeaders({ headers: { 'x-route-header': 'route-value' } });
-
-    expect(result.body.headers['x-client-header']).toBe('client-value');
-  });
-
   test('throws RequestValidationError and never calls fetch for invalid request data', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
     const client = createFetchClient(contract, { baseUrl: 'https://api.example.com' });

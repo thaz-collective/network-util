@@ -11,11 +11,22 @@ import { contractHeadersSymbol } from './types';
 
 export interface CreateFetchClientOptions {
   baseUrl: string;
-  headers?: HeadersInit | (() => HeadersInit);
+
+  /** The initial set of headers passed in on every client call */
+  headers?: HeadersInit;
+}
+
+export interface FetchClientRequestOptions {
+  signal?: AbortSignal;
+  /** Merged in last, overriding any headers derived from the contract's schemas or default client headers. */
+  headers?: HeadersInit;
 }
 
 export type FetchClient<T extends RouteDefMap<T>> = {
-  [K in keyof T]: (args: InferRequest<T[K]>) => Promise<InferResponse<T[K]>>;
+  [K in keyof T]: (
+    args: InferRequest<T[K]>,
+    requestOptions?: FetchClientRequestOptions,
+  ) => Promise<InferResponse<T[K]>>;
 };
 
 export function createFetchClient<T extends Contract<RouteDefMap<T>, StandardSchemaV1 | undefined>>(
@@ -24,51 +35,65 @@ export function createFetchClient<T extends Contract<RouteDefMap<T>, StandardSch
 ): FetchClient<T> {
   const globalHeadersSchema = contract[contractHeadersSymbol];
 
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic-to-concrete boundary: contract's values are RouteDef by construction
-  const routeEntries = Object.entries(contract) as [keyof T, RouteDef][];
-  const entries = routeEntries.map(([key, route]) => [key, createRouteFn(route)] as const);
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- populating a mapped type via a dynamic-key loop is unprovable to TS ahead of time
+  const client = {} as FetchClient<T>;
 
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic-to-concrete boundary: entries are built from contract's own keys/routes
-  return Object.fromEntries(entries) as FetchClient<T>;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Object.keys widens to string[] for generic T; contract's own keys are known to be keyof T
+  for (const key of Object.keys(contract) as (keyof T & string)[]) {
+    client[key] = createRouteFn(contract[key]);
+  }
+
+  return client;
 
   function createRouteFn(route: RouteDef) {
-    return async (args: Partial<Record<RequestField, unknown>>) => {
+    return async (args: Partial<Record<RequestField, unknown>>, requestOptions?: FetchClientRequestOptions) => {
       const request: RequestInit = { method: route.method };
-      const requestHeaders = initializeHeaders(options.headers);
 
-      const pathParams = await validateOptionalRequestField(route, 'pathParams', args.pathParams);
-      assertRequestFieldIsRecord(pathParams, route, 'pathParams');
-      const query = await validateOptionalRequestField(route, 'query', args.query);
-      assertRequestFieldIsRecord(query, route, 'query');
+      const requestHeaders = new Headers(options.headers);
+
       const globalHeaders = await validateOptionalSchema(globalHeadersSchema, args.headers, route, 'headers');
-      assertRequestFieldIsRecord(globalHeaders, route, 'headers');
-      const routeHeaders = await validateOptionalRequestField(route, 'headers', args.headers);
-      assertRequestFieldIsRecord(routeHeaders, route, 'headers');
-      let headers: Record<string, unknown> | undefined;
-      if (globalHeaders || routeHeaders) {
-        headers = { ...globalHeaders, ...routeHeaders };
-      }
-      const body = await validateOptionalRequestField(route, 'body', args.body);
-
-      const url = buildUrl(options.baseUrl, route.path, pathParams, query);
-
-      if (headers) {
-        for (const [headerKey, value] of Object.entries(headers)) {
+      assertRequestFieldIsRecordObjectOrUndefined(globalHeaders, route, 'headers');
+      if (globalHeaders) {
+        for (const [headerKey, value] of Object.entries(globalHeaders)) {
           requestHeaders.set(headerKey, String(value));
         }
       }
 
-      if (body !== undefined && route.method !== 'GET' && route.method !== 'HEAD') {
+      const routeHeaders = await validateOptionalRequestField(route, 'headers', args.headers);
+      assertRequestFieldIsRecordObjectOrUndefined(routeHeaders, route, 'headers');
+      if (routeHeaders) {
+        for (const [headerKey, value] of Object.entries(routeHeaders)) {
+          requestHeaders.set(headerKey, String(value));
+        }
+      }
+
+      if (requestOptions?.headers !== undefined) {
+        for (const [headerKey, value] of new Headers(requestOptions.headers)) {
+          requestHeaders.set(headerKey, value);
+        }
+      }
+
+      request.headers = requestHeaders;
+      if (requestOptions?.signal !== undefined) {
+        request.signal = requestOptions.signal;
+      }
+
+      const body = await validateOptionalRequestField(route, 'body', args.body);
+      if (body !== undefined) {
         requestHeaders.set('content-type', 'application/json');
         request.body = JSON.stringify(body);
       }
 
-      request.headers = requestHeaders;
+      const pathParams = await validateOptionalRequestField(route, 'pathParams', args.pathParams);
+      assertRequestFieldIsRecordObjectOrUndefined(pathParams, route, 'pathParams');
 
+      const query = await validateOptionalRequestField(route, 'query', args.query);
+      assertRequestFieldIsRecordObjectOrUndefined(query, route, 'query');
+
+      const url = buildUrl(options.baseUrl, route.path, pathParams, query);
       const res = await fetch(url, request);
 
-      const contentType = res.headers.get('content-type') ?? '';
-      const parsedBody = await parseResponseBody(res, contentType);
+      const parsedBody = await parseResponseBody(res);
 
       const responseSchema = route.responses[res.status];
       if (responseSchema) {
@@ -94,27 +119,18 @@ export function createFetchClient<T extends Contract<RouteDefMap<T>, StandardSch
   }
 }
 
-// TODO: Check if this is correct
-function isPlainObject(value: unknown): value is Record<string, unknown> {
+function assertIsRecordObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function assertRequestFieldIsRecord(
+function assertRequestFieldIsRecordObjectOrUndefined(
   value: unknown,
   route: RouteDef,
   field: RequestField,
 ): asserts value is Record<string, unknown> | undefined {
-  if (value !== undefined && !isPlainObject(value)) {
+  if (value !== undefined && !assertIsRecordObject(value)) {
     throw new InvalidRequestFieldTypeError({ method: route.method, path: route.path, requestField: field });
   }
-}
-
-function initializeHeaders(optionsHeaders: CreateFetchClientOptions['headers']) {
-  if (typeof optionsHeaders === 'function') {
-    return new Headers(optionsHeaders());
-  }
-
-  return new Headers(optionsHeaders);
 }
 
 export async function validateAgainstStandardSchema<T extends StandardSchemaV1>(
@@ -132,17 +148,13 @@ export async function validateAgainstStandardSchema<T extends StandardSchemaV1>(
   return { success: true, value: result.value };
 }
 
-export async function validateOptionalRequestField(route: RouteDef, field: RequestField, value: unknown) {
-  return await validateOptionalSchema(route[field], value, route, field);
-}
-
-async function validateOptionalSchema(
+export async function validateOptionalSchema(
   schema: StandardSchemaV1 | undefined,
   value: unknown,
   route: RouteDef,
   field: RequestField,
 ) {
-  if (!schema) {
+  if (schema === undefined) {
     return undefined;
   }
 
@@ -157,6 +169,10 @@ async function validateOptionalSchema(
     path: route.path,
     requestField: field,
   });
+}
+
+export async function validateOptionalRequestField(route: RouteDef, field: RequestField, value: unknown) {
+  return await validateOptionalSchema(route[field], value, route, field);
 }
 
 export function buildUrl(
@@ -198,13 +214,16 @@ function stringifyQueryValue(value: unknown): string {
   if (typeof value === 'string') {
     return value;
   }
+
   return JSON.stringify(value);
 }
 
-async function parseResponseBody(res: Response, contentType: string): Promise<unknown> {
-  if (contentType.includes('application/') && contentType.includes('json')) {
+async function parseResponseBody(res: Response): Promise<unknown> {
+  const contentType = res.headers.get('content-type');
+
+  if (contentType?.includes('application/') && contentType?.includes('json')) {
     return await res.json();
-  } else if (contentType.includes('text/')) {
+  } else if (contentType?.includes('text/')) {
     return await res.text();
   }
 

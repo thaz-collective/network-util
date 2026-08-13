@@ -5,7 +5,7 @@
     "@thaz/typescript-config/paths.json",
     "@thaz/typescript-config/react.json"
   ],
-  "include": ["src", "test", "vite.config.ts"],
+  "include": ["src", "test", "mock", "vite.config.ts"],
   "compilerOptions": {
     "types": ["node", "react"],
     "lib": ["es2023", "dom", "esnext.temporal", "esnext.intl", "esnext.date"]

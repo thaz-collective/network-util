@@ -129,8 +129,6 @@ export default defineConfig({
     rules: {
       ...libraryCodeConfigRules.rules,
       'import/no-default-export': 'off',
-      'vitest/prefer-importing-vitest-globals': 'error',
-      'vitest/no-importing-vitest-globals': 'off',
     },
   },
 });

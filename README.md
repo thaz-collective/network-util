@@ -15,8 +15,8 @@ vp add @thaz/network-util @thaz/temporal-util valibot
 ```
 
 `@tanstack/react-query` and `react` are only needed if you use `@thaz/network-util/react-query`.
-`temporal-polyfill` is only needed for the `Temporal`-backed schemas
-exported from the root entry point or errors path.
+`temporal-polyfill` is only needed for the `Temporal`-backed schemas exported from the root entry
+point, and re-exported through `@thaz/network-util/error`.
 
 ---
 
@@ -133,21 +133,21 @@ successful or failed response.
 
 ```ts
 import * as v from 'valibot';
-import { MESSAGE_TYPE, message, response } from '@thaz/network-util';
+import * as n from '@thaz/network-util';
 
-v.parse(response, {
-  message_list: [{ type: MESSAGE_TYPE.ERROR, code: 'E001', description: 'Something failed' }],
+v.parse(n.response, {
+  message_list: [{ type: n.MESSAGE_TYPE.ERROR, code: 'E001', description: 'Something failed' }],
 });
 ```
 
-| Export                 | Description                                                           |
-| ---------------------- | --------------------------------------------------------------------- |
-| `MESSAGE_TYPE`         | Enum-style constant map of the four recognized severity levels        |
-| `MessageType`          | Union type of the recognized severity level string values             |
-| `MESSAGE_TYPE_OPTIONS` | Array of all `MessageType` values                                     |
-| `messageType`          | Picklist schema validating against `MESSAGE_TYPE_OPTIONS`             |
-| `message`              | Schema for a single response message (`type`, `code`, `description`)  |
-| `response`             | Schema for the response envelope (`message_list`, defaulting to `[]`) |
+| Export                   | Description                                                           |
+| ------------------------ | --------------------------------------------------------------------- |
+| `n.MESSAGE_TYPE`         | Enum-style constant map of the four recognized severity levels        |
+| `n.MessageType`          | Union type of the recognized severity level string values             |
+| `n.MESSAGE_TYPE_OPTIONS` | Array of all `MessageType` values                                     |
+| `n.messageType`          | Picklist schema validating against `MESSAGE_TYPE_OPTIONS`             |
+| `n.message`              | Schema for a single response message (`type`, `code`, `description`)  |
+| `n.response`             | Schema for the response envelope (`message_list`, defaulting to `[]`) |
 
 ---
 
@@ -222,7 +222,7 @@ Responses are validated against the schema declared for the returned status code
 cancellation) and `headers` (merged in last, overriding contract- and client-level headers).
 
 An optional `headers` schema can be passed to `defineContract` to validate/require headers on every
-route, merged with each route's own `headers` schema — see `DefineContractOptions`.
+route, merged with each route's own `headers` schema.
 
 | Export                      | Description                                                                                                       |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -281,4 +281,4 @@ minimum visible duration and delay.
 - [Temporal proposal](https://tc39.es/proposal-temporal/docs/) - the `Temporal` API these schemas normalize input into
 - [`temporal-polyfill`](https://www.npmjs.com/package/temporal-polyfill) - the polyfill this package targets as a peer if you don't already have the `Temporal` API in your runtime
 - [`@thaz/temporal-util`](https://github.com/thaz-collective/temporal-util) - `Temporal` schemas and comparison actions this package builds on
-- [`@ts-rest/core`](https://github.com/ts-rest/ts-rest/tree/main/libs/ts-rest/core) - previously used but given we only used the contract/client it made more sense to rebuild myself and maintain a simpler syntax for needs of a thaz-collective project
+- [`@ts-rest/core`](https://github.com/ts-rest/ts-rest/tree/main/libs/ts-rest/core) - previously used but given we only used the contract/client it made more sense to rebuild ourselves and maintain a simpler syntax for the needs of a thaz-collective project

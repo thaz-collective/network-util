@@ -1,5 +1,5 @@
 import type { StandardSchemaV1 } from './standard-schema';
-import type { InferRequest, InferResponse, RouteDef, RequestField, RouteDefMap, ContractHeaders } from './types';
+import type { InferRequest, InferResponse, RouteDef, RequestField, RouteDefMap, Contract } from './types';
 import {
   RequestValidationError,
   ResponseValidationError,
@@ -18,11 +18,11 @@ export type FetchClient<T extends RouteDefMap<T>> = {
   [K in keyof T]: (args: InferRequest<T[K]>) => Promise<InferResponse<T[K]>>;
 };
 
-export function createFetchClient<T extends RouteDefMap<T>>(
+export function createFetchClient<T extends Contract<RouteDefMap<T>, StandardSchemaV1 | undefined>>(
   contract: T,
   options: CreateFetchClientOptions,
 ): FetchClient<T> {
-  const globalHeadersSchema = (contract as ContractHeaders)[contractHeadersSymbol];
+  const globalHeadersSchema = contract[contractHeadersSymbol];
 
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic-to-concrete boundary: contract's values are RouteDef by construction
   const routeEntries = Object.entries(contract) as [keyof T, RouteDef][];

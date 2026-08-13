@@ -151,6 +151,56 @@ describe('createFetchClient', () => {
   });
 });
 
+describe('global headers', () => {
+  beforeAll(() => {
+    server.listen({ onUnhandledRequest: 'error' });
+  });
+  afterEach(() => {
+    server.resetHandlers();
+  });
+  afterAll(() => {
+    server.close();
+  });
+
+  const globalHeadersContract = defineContract(
+    {
+      echoHeadersWithRouteSchema: {
+        method: 'GET',
+        path: '/echo-headers',
+        headers: v.object({ 'x-route-header': v.string() }),
+        responses: { 200: v.object({ headers: v.record(v.string(), v.string()) }) },
+      },
+      echoHeadersNoRouteSchema: {
+        method: 'GET',
+        path: '/echo-headers',
+        responses: { 200: v.object({ headers: v.record(v.string(), v.string()) }) },
+      },
+    },
+    { headers: v.object({ 'x-tenant': v.string() }) },
+  );
+
+  test('merges the global headers schema with a route that declares its own headers', async () => {
+    server.use(echoHeadersHandler.success);
+    const client = createFetchClient(globalHeadersContract, { baseUrl: 'https://api.example.com' });
+
+    const result = await client.echoHeadersWithRouteSchema({
+      headers: { 'x-tenant': 'acme', 'x-route-header': 'route-value' },
+    });
+
+    expect(result.body.headers['x-tenant']).toBe('acme');
+    expect(result.body.headers['x-route-header']).toBe('route-value');
+  });
+
+  test('applies the global headers schema to a route with no headers schema of its own', async () => {
+    server.use(echoHeadersHandler.success);
+    const client = createFetchClient(globalHeadersContract, { baseUrl: 'https://api.example.com' });
+
+    const result = await client.echoHeadersNoRouteSchema({ headers: { 'x-tenant': 'acme' } });
+
+    expect(result.body.headers['x-tenant']).toBe('acme');
+  });
+});
+
 describe('validateAgainstStandardSchema', () => {
   test('returns success with the parsed value for valid input', async () => {
     const result = await validateAgainstStandardSchema(

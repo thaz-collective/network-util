@@ -3,6 +3,7 @@ import { describe, test, expectTypeOf } from 'vite-plus/test';
 import * as v from 'valibot';
 
 import type { RouteDef, InferRequest, InferResponse } from '#src/fetch/types';
+import { createFetchClient } from '#src/fetch/client';
 import { defineContract } from '#src/fetch/contract';
 
 const pathParamsSchema = v.object({ id: v.pipe(v.string(), v.transform(Number)) });
@@ -71,5 +72,51 @@ describe('fetch dsl type inference', () => {
     expectTypeOf<{ notAStandardSchema: true }>().not.toExtend<RouteDef['headers']>();
     expectTypeOf<{ notAStandardSchema: true }>().not.toExtend<RouteDef['body']>();
     expectTypeOf<{ notAStandardSchema: true }>().not.toExtend<RouteDef['responses'][number]>();
+  });
+});
+
+describe('global headers', () => {
+  const globalHeadersSchema = v.object({ 'x-tenant': v.string() });
+
+  const contractWithGlobalHeaders = defineContract(
+    {
+      withOwnHeaders: {
+        method: 'GET',
+        path: '/a',
+        headers: v.object({ 'x-route': v.string() }),
+        responses: { 200: okResponseSchema },
+      },
+      withoutOwnHeaders: {
+        method: 'GET',
+        path: '/b',
+        responses: { 200: okResponseSchema },
+      },
+    },
+    { headers: globalHeadersSchema },
+  );
+
+  test('merges global and route headers into a single required object', () => {
+    expectTypeOf<
+      InferRequest<(typeof contractWithGlobalHeaders)['withOwnHeaders'], typeof globalHeadersSchema>
+    >().toEqualTypeOf<{
+      headers: { 'x-tenant': string; 'x-route': string };
+    }>();
+  });
+
+  test('applies global headers alone when a route has no headers schema', () => {
+    expectTypeOf<
+      InferRequest<(typeof contractWithGlobalHeaders)['withoutOwnHeaders'], typeof globalHeadersSchema>
+    >().toEqualTypeOf<{
+      headers: { 'x-tenant': string };
+    }>();
+  });
+
+  test('createFetchClient threads the global headers schema through to each route', () => {
+    const client = createFetchClient(contractWithGlobalHeaders, { baseUrl: 'https://api.example.com' });
+
+    expectTypeOf(client.withOwnHeaders)
+      .parameter(0)
+      .toEqualTypeOf<{ headers: { 'x-tenant': string; 'x-route': string } }>();
+    expectTypeOf(client.withoutOwnHeaders).parameter(0).toEqualTypeOf<{ headers: { 'x-tenant': string } }>();
   });
 });

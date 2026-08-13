@@ -58,4 +58,17 @@ describe('defineContract', () => {
   test('isContractPathParamsError returns false for a plain Error', () => {
     expect(ContractPathParamsError.isContractPathParamsError(new Error('nope'))).toBeFalsy();
   });
+
+  test('accepts an optional global headers schema without changing the returned routes reference', () => {
+    const routes = {
+      getPost: {
+        method: 'GET' as const,
+        path: '/posts/:id',
+        pathParams: v.object({ id: v.string() }),
+        responses: { 200: v.object({ id: v.string() }) },
+      },
+    };
+
+    expect(defineContract(routes, { headers: v.object({ 'x-tenant': v.string() }) })).toBe(routes);
+  });
 });

@@ -1,5 +1,5 @@
 import type { StandardSchemaV1 } from './standard-schema';
-import type { InferRequest, InferResponse, RouteDef, RequestField } from './types';
+import type { InferRequest, InferResponse, RouteDef, RequestField, ContractHeaders } from './types';
 import {
   RequestValidationError,
   ResponseValidationError,
@@ -7,25 +7,32 @@ import {
   InvalidRequestFieldTypeError,
   MissingPathParamError,
 } from './errors';
+import { contractHeadersSymbol } from './types';
 
 export interface CreateFetchClientOptions {
   baseUrl: string;
   headers?: HeadersInit | (() => HeadersInit);
 }
 
-export type FetchClient<T extends Record<string, RouteDef>> = {
-  [K in keyof T]: (args: InferRequest<T[K]>) => Promise<InferResponse<T[K]>>;
+type RouteDefMap<T> = { [K in keyof T as K extends string ? K : never]: RouteDef };
+
+export type FetchClient<T extends RouteDefMap<T>, G extends StandardSchemaV1 | undefined = undefined> = {
+  [K in keyof T]: (args: InferRequest<T[K], G>) => Promise<InferResponse<T[K]>>;
 };
 
-export function createFetchClient<T extends Record<string, RouteDef>>(
+type ContractGlobalHeaders<T> = T extends ContractHeaders<infer G> ? G : undefined;
+
+export function createFetchClient<T extends RouteDefMap<T>>(
   contract: T,
   options: CreateFetchClientOptions,
-): FetchClient<T> {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- built up incrementally below
-  const client = {} as unknown as FetchClient<T>;
+): FetchClient<T, ContractGlobalHeaders<T>> {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- built up incrementally below
+  const client = {} as unknown as FetchClient<T, ContractGlobalHeaders<T>>;
+  const globalHeadersSchema = (contract as ContractHeaders)[contractHeadersSymbol];
 
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic-to-concrete boundary
   for (const [key, route] of Object.entries(contract) as [keyof T, RouteDef][]) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- generic-to-concrete boundary
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- generic-to-concrete boundary
     client[key] = createRouteFn(route);
   }
 
@@ -40,8 +47,14 @@ export function createFetchClient<T extends Record<string, RouteDef>>(
       assertRequestFieldIsRecord(pathParams, route, 'pathParams');
       const query = await validateOptionalRequestField(route, 'query', args.query);
       assertRequestFieldIsRecord(query, route, 'query');
-      const headers = await validateOptionalRequestField(route, 'headers', args.headers);
-      assertRequestFieldIsRecord(headers, route, 'headers');
+      const globalHeaders = await validateOptionalSchema(globalHeadersSchema, args.headers, route, 'headers');
+      assertRequestFieldIsRecord(globalHeaders, route, 'headers');
+      const routeHeaders = await validateOptionalRequestField(route, 'headers', args.headers);
+      assertRequestFieldIsRecord(routeHeaders, route, 'headers');
+      let headers: Record<string, unknown> | undefined;
+      if (globalHeaders || routeHeaders) {
+        headers = { ...globalHeaders, ...routeHeaders };
+      }
       const body = await validateOptionalRequestField(route, 'body', args.body);
 
       const url = buildUrl(options.baseUrl, route.path, pathParams, query);
@@ -127,7 +140,15 @@ export async function validateAgainstStandardSchema<T extends StandardSchemaV1>(
 }
 
 export async function validateOptionalRequestField(route: RouteDef, field: RequestField, value: unknown) {
-  const schema = route[field];
+  return await validateOptionalSchema(route[field], value, route, field);
+}
+
+async function validateOptionalSchema(
+  schema: StandardSchemaV1 | undefined,
+  value: unknown,
+  route: RouteDef,
+  field: RequestField,
+) {
   if (!schema) {
     return undefined;
   }
